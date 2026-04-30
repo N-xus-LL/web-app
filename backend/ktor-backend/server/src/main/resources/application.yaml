@@ -1,0 +1,11 @@
+ktor:
+  deployment:
+    port: 8080
+  application:
+    modules:
+      - nexus.HttpKt.configureHttp
+      - nexus.SerializationKt.configureSerialization
+      - nexus.PostgresKt.configurePostgres
+      - nexus.RpcKt.configureRpc
+      - nexus.ResourcesKt.configureResources
+      - nexus.RoutingKt.configureRouting
