@@ -1,16 +1,39 @@
-CREATE TABLE place (
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE places (
     id SERIAL PRIMARY KEY,
     name TEXT,
     type TEXT,
-    lat DOUBLE PRECISION,
-    lon DOUBLE PRECISION,
+    lat DOUBLE PRECISION NOT NULL,
+    lon DOUBLE PRECISION NOT NULL,
     address TEXT
 );
 
-CREATE TABLE item (
+CREATE TABLE items (
     id SERIAL PRIMARY KEY,
-    title TEXT,
+    title TEXT NOT NULL,
     price TEXT,
     location TEXT,
     link TEXT
 );
+
+CREATE TABLE transactions (
+    id SERIAL PRIMARY KEY,
+    item_id INT REFERENCES items(id) ON DELETE CASCADE,
+    place_id INT REFERENCES places(id) ON DELETE SET NULL,
+    user_id INT REFERENCES users(id) ON DELETE SET NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ALTER TABLE users
+-- ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- ALTER TABLE items
+-- ADD COLUMN owner_id INT REFERENCES users(id) ON DELETE SET NULL;
+
+-- ALTER TABLE items
+-- ADD COLUMN available BOOLEAN DEFAULT TRUE;
