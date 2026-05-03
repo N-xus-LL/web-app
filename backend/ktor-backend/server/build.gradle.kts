@@ -26,6 +26,8 @@ dependencies {
     implementation(libs.kotlinx.rpc.server)
     implementation(libs.logback.classic)
     implementation(libs.postgresql)
+    implementation(libs.exposed.core)
+    implementation(libs.exposed.jdbc)
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)

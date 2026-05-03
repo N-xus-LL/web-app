@@ -7,9 +7,12 @@ import io.ktor.resources.*
 import io.ktor.server.resources.*
 import io.ktor.server.resources.Resources
 import kotlinx.serialization.Serializable
+import nexus.routes.itemRoutes
 
 fun Application.configureRouting() {
     routing {
+        itemRoutes()
+
         get("/") {
             call.respondText("Hello, World!")
         }
