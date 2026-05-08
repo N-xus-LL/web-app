@@ -2,7 +2,7 @@ package nexus.database
 
 import org.jetbrains.exposed.v1.core.Table
 
-object ItemTable: Table("items") {
+object Items : Table("items") {
     val id = integer("id").autoIncrement()
     val title = varchar("title", 100)
     val price = varchar("price", 20)

@@ -1,6 +1,6 @@
 package nexus.repository
 
-import nexus.database.ItemTable
+import nexus.database.Items
 import nexus.models.Item
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.core.*
@@ -9,30 +9,30 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 class ItemRepository() {
 
     fun getItems(): List<Item> = transaction {
-        ItemTable
+        Items
             .selectAll()
             .map {
                 Item(
-                    id = it[ItemTable.id],
-                    title = it[ItemTable.title],
-                    price = it[ItemTable.price],
-                    location = it[ItemTable.location],
-                    link = it[ItemTable.link]
+                    id = it[Items.id],
+                    title = it[Items.title],
+                    price = it[Items.price],
+                    location = it[Items.location],
+                    link = it[Items.link]
                 )
             }
     }
 
     fun getItemById(id: Int): Item? = transaction {
-        ItemTable
+        Items
             .selectAll()
-            .where { ItemTable.id eq id }
+            .where { Items.id eq id }
             .map {
                 Item(
-                    id = it[ItemTable.id],
-                    title = it[ItemTable.title],
-                    price = it[ItemTable.price],
-                    location = it[ItemTable.location],
-                    link = it[ItemTable.link]
+                    id = it[Items.id],
+                    title = it[Items.title],
+                    price = it[Items.price],
+                    location = it[Items.location],
+                    link = it[Items.link]
                 )
             }
             .singleOrNull()
@@ -40,27 +40,27 @@ class ItemRepository() {
 
     fun createItem(item: Item): Item {
         val newId = transaction {
-            ItemTable.insert {
-                it[ItemTable.title] = item.title
-                it[ItemTable.price] = item.price
-                it[ItemTable.location] = item.location
-                it[ItemTable.link] = item.link
-            } get ItemTable.id
+            Items.insert {
+                it[Items.title] = item.title
+                it[Items.price] = item.price
+                it[Items.location] = item.location
+                it[Items.link] = item.link
+            } get Items.id
         }
 
         return item.copy(id = newId)
     }
 
     fun updateItem(item: Item): Boolean = transaction {
-        ItemTable.update({ ItemTable.id eq item.id!! }) {
-            it[ItemTable.title] = item.title
-            it[ItemTable.price] = item.price
-            it[ItemTable.location] = item.location
-            it[ItemTable.link] = item.link
+        Items.update({ Items.id eq item.id!! }) {
+            it[Items.title] = item.title
+            it[Items.price] = item.price
+            it[Items.location] = item.location
+            it[Items.link] = item.link
         } > 0
     }
 
     fun deleteItem(id: Int): Boolean = transaction {
-        ItemTable.deleteWhere { ItemTable.id eq id } > 0
+        Items.deleteWhere { Items.id eq id } > 0
     }
 }
