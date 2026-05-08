@@ -37,13 +37,13 @@ fun Route.itemRoutes() {
                 call.respond(HttpStatusCode.NotFound, "Item not found")
             }
         }
-/*
+
         post {
             val item = call.receive<ItemRequest>()
             val created = itemRepository.createItem(item.toEntity())
             call.respond(HttpStatusCode.Created, created.toResponse())
         }
-*/
+
         put {
             val item = call.receive<ItemRequest>()
 
