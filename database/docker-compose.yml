@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:17
+    image: postgis/postgis:17-3.4
     container_name: lendloop-db
     environment:
       POSTGRES_USER: postgres
