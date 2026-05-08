@@ -19,3 +19,26 @@ INSERT INTO item_conditions (id, name) VALUES
 ('fair', 'Fair'),
 ('poor', 'Poor'),
 ('damaged', 'Damaged');
+
+INSERT INTO users (
+    id,
+    email,
+    username,
+    first_name,
+    last_name,
+    password_hash,
+    current_location,
+    created_at,
+    updated_at
+)
+VALUES (
+    uuid_generate_v4(),
+    'test@example.com',
+    'testuser',
+    'Test',
+    'User',
+    '$2a$10$abcdefghijklmnopqrstuv', -- fake bcrypt hash
+    ST_SetSRID(ST_MakePoint(15.9819, 45.8150), 4326),
+    NOW(),
+    NOW()
+);
