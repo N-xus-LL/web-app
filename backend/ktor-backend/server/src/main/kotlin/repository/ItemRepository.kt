@@ -122,7 +122,9 @@ class ItemRepository() {
             ?, -- available
             ?::jsonb -- metadata
         )
-        RETURNING id;
+        RETURNING *,
+    ST_X(current_location) AS lon,
+    ST_Y(current_location) AS lat;
     """.trimIndent()
 
         val jdbcConnection = TransactionManager.current().connection.connection as Connection
@@ -137,10 +139,11 @@ class ItemRepository() {
             stmt.setString(5, item.name)
             stmt.setString(6, item.description)
 
-            stmt.setString(
-                7,
-                item.images.joinToString(prefix = "{", postfix = "}") { "\"$it\"" }
+            val imagesArray = jdbcConnection.createArrayOf(
+                "text",
+                item.images.toTypedArray()
             )
+            stmt.setArray(7, imagesArray)
 
             stmt.setDouble(8, item.currentLocation.longitude)
             stmt.setDouble(9, item.currentLocation.latitude)
@@ -205,10 +208,11 @@ class ItemRepository() {
             stmt.setString(5, item.name)
             stmt.setString(6, item.description)
 
-            stmt.setString(
-                7,
-                item.images.joinToString(prefix = "{", postfix = "}") { "\"$it\"" }
+            val imagesArray = jdbcConnection.createArrayOf(
+                "text",
+                item.images.toTypedArray()
             )
+            stmt.setArray(7, imagesArray)
 
             stmt.setDouble(8, item.currentLocation.longitude)
             stmt.setDouble(9, item.currentLocation.latitude)

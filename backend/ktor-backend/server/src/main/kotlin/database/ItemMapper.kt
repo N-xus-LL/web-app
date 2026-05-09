@@ -50,9 +50,9 @@ fun ItemEntity.toResponse(): ItemResponse {
         id = id.toString(),
 
         owner_id = owner_id.toString(),
-        category_id = category_id.toString(),
-        condition_id = condition_id.toString(),
-        default_damage_policy_id = default_damage_policy_id.toString(),
+        category_id = category_id?.toString(),
+        condition_id = condition_id,
+        default_damage_policy_id = default_damage_policy_id,
 
         name = name,
         description = description,
@@ -79,7 +79,7 @@ fun ItemRequest.toEntity(): ItemEntity {
 
         owner_id = UUID.fromString(owner_id),
 
-        category_id = UUID.fromString(category_id),
+        category_id = category_id?.let { UUID.fromString(category_id) },
 
         condition_id = condition_id,
 
@@ -93,13 +93,11 @@ fun ItemRequest.toEntity(): ItemEntity {
 
         currentLocation = currentLocation,
 
-        estimatedValue =
-            estimatedValue?.toBigDecimal(),
+        estimatedValue = estimatedValue?.toBigDecimal(),
 
         available = available,
 
-        metadata =
-            Json.encodeToString(metadata),
+        metadata = Json.encodeToString(metadata),
 
         createdAt = Instant.now(),
 
