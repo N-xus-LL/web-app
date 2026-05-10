@@ -1,6 +1,6 @@
 package nexus.repository
 
-import nexus.database.Users
+import nexus.database.tables.Users
 
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.*

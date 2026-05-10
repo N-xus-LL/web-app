@@ -28,6 +28,9 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
+    implementation("org.jetbrains.exposed:exposed-json:1.2.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:1.2.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:1.2.0")
 
     testImplementation(kotlin("test"))
     testImplementation(ktorLibs.server.testHost)
