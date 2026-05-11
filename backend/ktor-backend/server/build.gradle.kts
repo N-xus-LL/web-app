@@ -56,7 +56,7 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.1.0")
 
     // --- Specialized Exposed Support ---
-    implementation("org.jetbrains.exposed:exposed-kotlin-uuid:$exposedVersion")
+    // implementation("org.jetbrains.exposed:exposed-kotlin-uuid:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
 
     // --- Serialization (Required for JSONB and GeoJSON) ---
@@ -69,5 +69,5 @@ dependencies {
     // --- PostGIS / Spatial Support ---
     // Note: Exposed doesn't have official PostGIS support.
     //       Most developers use below standard community library.
-    implementation("com.github.tpguy84:exposed-postgis:$postgisVersion")
+    // implementation("com.github.tpguy84:exposed-postgis:$postgisVersion")
 }

@@ -10,12 +10,12 @@ object LoanStatuses : Table("loan_statuses") {
 }
 
 enum class LoanStatusEnum(val id: String) {
-    PENDING("PENDING"),
-    ACTIVE("ACTIVE"),
-    OVERDUE("OVERDUE"),
-    COMPLETED("COMPLETED"),
-    CANCELLED("CANCELLED"),
-    REJECTED("REJECTED");
+    PENDING("pending"),
+    ACTIVE("active"),
+    OVERDUE("overdue"),
+    COMPLETED("completed"),
+    CANCELLED("cancelled"),
+    REJECTED("rejected");
 
     companion object {
         fun fromId(id: String): LoanStatusEnum? = entries.find { it.id == id }

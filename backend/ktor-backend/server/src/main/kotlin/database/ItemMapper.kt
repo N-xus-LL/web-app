@@ -7,8 +7,8 @@ import nexus.api.model.ItemResponse
 import nexus.database.tables.ItemTable
 import nexus.models.GeoPoint
 import nexus.models.ItemRequest
-import nexus.util.formatGeoPoint
-import nexus.util.parseGeoPoint
+import nexus.utils.formatGeoPoint
+import nexus.utils.parseGeoPoint
 import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.ResultRow
 import java.time.Instant

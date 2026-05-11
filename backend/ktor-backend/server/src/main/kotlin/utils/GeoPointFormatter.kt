@@ -1,4 +1,4 @@
-package nexus.util
+package nexus.utils
 
 import nexus.models.GeoPoint
 

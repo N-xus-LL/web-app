@@ -11,9 +11,12 @@ import org.jetbrains.exposed.v1.core.eq
 import kotlin.uuid.Uuid
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.json.buildJsonObject
 import nexus.features.users.Users
 import nexus.features.items.Items
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import kotlin.uuid.ExperimentalUuidApi
 
 class LoansService {
@@ -26,7 +29,7 @@ class LoansService {
             .any()
 
         if (!itemExists) {
-            throw IllegalArgumentException("Item not found with id: ${request.itemId}")
+            throw IllegalArgumentException("Item with ID '${request.itemId}' not found.")
         }
 
         // Validate lender and borrower exist
@@ -36,7 +39,7 @@ class LoansService {
             .any()
 
         if (!lenderExists) {
-            throw IllegalArgumentException("Lender not found")
+            throw IllegalArgumentException("Lender not found.")
         }
 
         val borrowerExists = Users
@@ -45,7 +48,7 @@ class LoansService {
             .any()
 
         if (!borrowerExists) {
-            throw IllegalArgumentException("Borrower not found")
+            throw IllegalArgumentException("Borrower not found.")
         }
 
         val loanId = Loans.insert {
@@ -53,35 +56,35 @@ class LoansService {
             it[itemId] = request.itemId
             it[lenderId] = request.lenderId
             it[borrowerId] = request.borrowerId
-            it[loan_status] = LoanStatusEnum.PENDING.id
-            it[startDate] = request.startDate
-            it[expectedReturnDate] = request.expectedReturnDate
+            it[status] = LoanStatusEnum.PENDING.id
+            it[startDate] = request.startDate?.toLocalDateTime(TimeZone.UTC)
+            it[expectedReturnDate] = request.expectedReturnDate?.toLocalDateTime(TimeZone.UTC)
             it[notes] = request.notes
-            it[metadata] = request.metadata!!
+            it[metadata] = request.metadata ?: buildJsonObject { }
             it[conditionOnBorrowId] = null
             it[agreedDamagePolicyId] = null
             it[actualReturnDate] = null
             it[conditionOnReturnId] = null
         } get Loans.id
 
-        getLoanById(loanId) ?: throw IllegalStateException("Failed to create loan")
+        getLoanById(loanId) ?: throw IllegalStateException("Failed to create loan.")
     }
 
-    fun getLoanById(loanId: Uuid): LoanResponse? = transaction {
+    fun getLoanById(loanId: EntityID<Uuid>): LoanResponse? = transaction {
         Loans
             .selectAll()
             .where { Loans.id eq loanId }
             .mapNotNull { row ->
                 LoanResponse(
-                    id = row[Loans.id],
+                    id = row[Loans.id].value,
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.loan_status],
+                    loanStatus = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
-                    startDate = row[Loans.startDate],
-                    expectedReturnDate = row[Loans.expectedReturnDate],
-                    actualReturnDate = row[Loans.actualReturnDate],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
                     conditionOnBorrowId = row[Loans.conditionOnBorrowId],
                     conditionOnReturnId = row[Loans.conditionOnReturnId],
                     notes = row[Loans.notes],
@@ -96,15 +99,15 @@ class LoansService {
             .selectAll()
             .map { row ->
                 LoanResponse(
-                    id = row[Loans.id],
+                    id = row[Loans.id].value,
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.loan_status],
+                    loanStatus = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
-                    startDate = row[Loans.startDate],
-                    expectedReturnDate = row[Loans.expectedReturnDate],
-                    actualReturnDate = row[Loans.actualReturnDate],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
                     conditionOnBorrowId = row[Loans.conditionOnBorrowId],
                     conditionOnReturnId = row[Loans.conditionOnReturnId],
                     notes = row[Loans.notes],
@@ -119,15 +122,15 @@ class LoansService {
             .where { Loans.borrowerId eq borrowerId }
             .map { row ->
                 LoanResponse(
-                    id = row[Loans.id],
+                    id = row[Loans.id].value,
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.loan_status],
+                    loanStatus = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
-                    startDate = row[Loans.startDate],
-                    expectedReturnDate = row[Loans.expectedReturnDate],
-                    actualReturnDate = row[Loans.actualReturnDate],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
                     conditionOnBorrowId = row[Loans.conditionOnBorrowId],
                     conditionOnReturnId = row[Loans.conditionOnReturnId],
                     notes = row[Loans.notes],
@@ -142,15 +145,15 @@ class LoansService {
             .where { Loans.lenderId eq lenderId }
             .map { row ->
                 LoanResponse(
-                    id = row[Loans.id],
+                    id = row[Loans.id].value,
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.loan_status],
+                    loanStatus = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
-                    startDate = row[Loans.startDate],
-                    expectedReturnDate = row[Loans.expectedReturnDate],
-                    actualReturnDate = row[Loans.actualReturnDate],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
                     conditionOnBorrowId = row[Loans.conditionOnBorrowId],
                     conditionOnReturnId = row[Loans.conditionOnReturnId],
                     notes = row[Loans.notes],
@@ -159,14 +162,16 @@ class LoansService {
             }
     }
 
-    fun updateLoan(loanId: Uuid, request: UpdateLoanRequest): LoanResponse? = transaction {
+    fun updateLoan(loanId: EntityID<Uuid>, request: UpdateLoanRequest): LoanResponse? = transaction {
         val existingLoan = getLoanById(loanId)
 
         existingLoan?.let {
             Loans.update({ Loans.id eq loanId }) {
-                request.loanStatus?.let { status -> it[loan_status] = status }
+                request.loanStatus?.let { status -> it[Loans.status] = status }
                 request.agreedDamagePolicyId?.let { policyId -> it[agreedDamagePolicyId] = policyId }
-                request.actualReturnDate?.let { returnDate -> it[actualReturnDate] = returnDate }
+                request.actualReturnDate?.let { returnDate ->
+                    it[actualReturnDate] = returnDate.toLocalDateTime(TimeZone.UTC)
+                }
                 request.conditionOnReturnId?.let { conditionId -> it[conditionOnReturnId] = conditionId }
                 request.notes?.let { note -> it[notes] = note }
                 request.metadata?.let { meta -> it[metadata] = meta }
@@ -176,13 +181,13 @@ class LoansService {
         }
     }
 
-    fun returnLoan(loanId: Uuid, condOnReturnId: String): LoanResponse? = transaction {
+    fun returnLoan(loanId: EntityID<Uuid>, condOnReturnId: String): LoanResponse? = transaction {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
         Loans.update(where = { Loans.id eq loanId }) {
             it[actualReturnDate] = now
             it[conditionOnReturnId] = condOnReturnId
-            it[loan_status] = LoanStatusEnum.PENDING.id
+            it[status] = LoanStatusEnum.COMPLETED.id
         }
 
         getLoanById(loanId)
@@ -190,7 +195,7 @@ class LoansService {
 
     fun cancelLoan(loanId: Uuid): Boolean = transaction {
         val updated = Loans.update({ Loans.id eq loanId }) {
-            it[loan_status] = LoanStatusEnum.CANCELLED.id
+            it[status] = LoanStatusEnum.CANCELLED.id
         }
         updated > 0
     }

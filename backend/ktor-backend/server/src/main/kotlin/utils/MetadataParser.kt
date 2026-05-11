@@ -1,4 +1,4 @@
-package nexus.util
+package nexus.utils
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
