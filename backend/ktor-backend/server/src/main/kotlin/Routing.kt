@@ -3,15 +3,19 @@ package nexus
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.resources.*
 import io.ktor.server.resources.*
-import io.ktor.server.resources.Resources
-import kotlinx.serialization.Serializable
+import nexus.repository.UserRepository
 import nexus.routes.itemRoutes
+import nexus.routes.userRoutes
+import nexus.features.loans.loanRoutes
 
 fun Application.configureRouting() {
+    val userRepository = UserRepository()
+
     routing {
         itemRoutes()
+        userRoutes(userRepository)
+        loanRoutes()
 
         get("/") {
             call.respondText("Hello, World!")
