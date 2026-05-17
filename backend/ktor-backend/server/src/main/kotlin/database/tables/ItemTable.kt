@@ -10,11 +10,11 @@ import org.jetbrains.exposed.v1.javatime.timestamp
 import kotlin.uuid.ExperimentalUuidApi
 
 object ItemTable: UUIDTable("items") {
-    val owner_id = reference("owner_id", Users, onDelete = ReferenceOption.CASCADE)
-    val category_id = reference("category_id", CategoriesTable, onDelete = ReferenceOption.SET_NULL).nullable()
-    val condition_id = varchar("condition_id", 50).references(ItemConditionsTable.id).nullable()
+    val ownerId = reference("owner_id", Users, onDelete = ReferenceOption.CASCADE)
+    val categoryId = reference("category_id", CategoriesTable, onDelete = ReferenceOption.SET_NULL).nullable()
+    val conditionId = varchar("condition_id", 50).references(ItemConditionsTable.id).nullable()
 
-    val default_damage_policy_id = varchar("default_damage_policy_id", 50).references(DamagePoliciesTable.id).nullable()
+    val defaultDamagePolicyId = varchar("default_damage_policy_id", 50).references(DamagePoliciesTable.id).nullable()
 
     val name = varchar("name", 255)
     val description = text("description").nullable()
