@@ -118,6 +118,21 @@ CREATE TABLE loans (
     CONSTRAINT different_parties CHECK (lender_id != borrower_id)
 );
 
+
+CREATE TABLE locations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    name TEXT NOT NULL,
+
+    location_type TEXT,
+
+    location GEOMETRY(POINT, 4326) NOT NULL,
+
+    source TEXT DEFAULT 'manual',
+
+    metadata JSONB DEFAULT '{}'::jsonb
+);
+
 -- =========================================================
 -- INDEXES
 -- =========================================================
@@ -139,6 +154,9 @@ ON loans(lender_id);
 
 CREATE INDEX idx_loans_borrower
 ON loans(borrower_id);
+
+CREATE INDEX idx_locations_geom
+ON locations USING GIST(location)
 
 -- =========================================================
 -- UPDATED_AT TRIGGER

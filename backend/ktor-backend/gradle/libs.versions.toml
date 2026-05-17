@@ -4,6 +4,7 @@ kotlin = "2.3.20"
 kotlinx-rpc = "0.10.2"
 logback = "1.5.21"
 exposed = "1.2.0"
+protolite-well-known-types = "18.0.1"
 
 [libraries]
 h2database-h2 = { module = "com.h2database:h2", version.ref = "h2" }
@@ -15,6 +16,7 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+protolite-well-known-types = { group = "com.google.firebase", name = "protolite-well-known-types", version.ref = "protolite-well-known-types" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

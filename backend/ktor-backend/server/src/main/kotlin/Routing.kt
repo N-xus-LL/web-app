@@ -6,6 +6,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.resources.*
 import nexus.repository.UserRepository
 import nexus.routes.itemRoutes
+import nexus.routes.locationRoutes
 import nexus.routes.userRoutes
 import nexus.features.loans.loanRoutes
 
@@ -13,6 +14,7 @@ fun Application.configureRouting() {
     val userRepository = UserRepository()
 
     routing {
+        locationRoutes()
         itemRoutes()
         userRoutes(userRepository)
         loanRoutes()

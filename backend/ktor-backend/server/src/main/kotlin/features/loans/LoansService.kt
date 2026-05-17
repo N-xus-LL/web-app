@@ -80,7 +80,7 @@ class LoansService {
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.status],
+                    status = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
                     startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
                     expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
@@ -103,7 +103,7 @@ class LoansService {
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.status],
+                    status = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
                     startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
                     expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
@@ -126,7 +126,7 @@ class LoansService {
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.status],
+                    status = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
                     startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
                     expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
@@ -149,7 +149,7 @@ class LoansService {
                     itemId = row[Loans.itemId],
                     lenderId = row[Loans.lenderId],
                     borrowerId = row[Loans.borrowerId],
-                    loanStatus = row[Loans.status],
+                    status = row[Loans.status],
                     agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
                     startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
                     expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
@@ -167,7 +167,7 @@ class LoansService {
 
         existingLoan?.let {
             Loans.update({ Loans.id eq loanId }) {
-                request.loanStatus?.let { status -> it[Loans.status] = status }
+                request.status?.let { status -> it[Loans.status] = status }
                 request.agreedDamagePolicyId?.let { policyId -> it[agreedDamagePolicyId] = policyId }
                 request.actualReturnDate?.let { returnDate ->
                     it[actualReturnDate] = returnDate.toLocalDateTime(TimeZone.UTC)

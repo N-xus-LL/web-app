@@ -58,6 +58,7 @@ dependencies {
     // --- Specialized Exposed Support ---
     // implementation("org.jetbrains.exposed:exposed-kotlin-uuid:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
 
     // --- Serialization (Required for JSONB and GeoJSON) ---
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
@@ -70,4 +71,8 @@ dependencies {
     // Note: Exposed doesn't have official PostGIS support.
     //       Most developers use below standard community library.
     // implementation("com.github.tpguy84:exposed-postgis:$postgisVersion")
+
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")   // dotenv
+    implementation("io.ktor:ktor-server-auth-jwt-jvm")  // Ktor JWT Authentication
+    implementation("org.mindrot:jbcrypt:0.4")   // BCrypt for password hashing
 }

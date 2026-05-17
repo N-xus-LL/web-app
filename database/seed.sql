@@ -90,3 +90,14 @@ INSERT INTO items (
           true,
           '{"category":"sports","type":"bike"}'::jsonb
       );
+
+INSERT INTO locations (
+    name,
+    location_type,
+    location
+)
+VALUES (
+    'Europark',
+    'mall',
+    ST_SetSRID(ST_MakePoint(15.652, 46.553), 4326)
+);
