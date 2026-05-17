@@ -7,7 +7,6 @@ import org.jetbrains.exposed.v1.core.Table
 
 @Serializable
 data class GeoJsonPoint(
-    val type: String = "Point",
     // GeoJSON uses [longitude, latitude] order
     val coordinates: List<Double>
 ) {

@@ -1,2 +1,4 @@
 .DS_Store
+.env
+env
 /database/schema-v1.sql

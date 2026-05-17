@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package nexus.database.tables
 
 import org.jetbrains.exposed.v1.core.ColumnType
@@ -5,6 +7,7 @@ import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
 import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
 import org.jetbrains.exposed.v1.javatime.timestamp
+import kotlin.uuid.ExperimentalUuidApi
 
 object ItemTable: UUIDTable("items") {
     val owner_id = reference("owner_id", Users, onDelete = ReferenceOption.CASCADE)
