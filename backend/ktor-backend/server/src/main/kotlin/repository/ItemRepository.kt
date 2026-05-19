@@ -31,7 +31,7 @@ class ItemRepository() {
                 metadata,
                 created_at,
                 updated_at
-            FROM items
+            FROM items;
         """.trimIndent()
         val jdbcConnection = TransactionManager.current().connection.connection as Connection
 
@@ -67,7 +67,7 @@ class ItemRepository() {
             updated_at
 
         FROM items
-        WHERE id = ?
+        WHERE id = ?;
     """.trimIndent()
 
         val jdbcConnection = TransactionManager.current().connection.connection as Connection
@@ -240,5 +240,92 @@ class ItemRepository() {
 
     fun deleteItem(id: UUID): Boolean = transaction {
         ItemTable.deleteWhere { ItemTable.id eq id } > 0
+    }
+
+    fun closestItem(lat: Double, lon: Double): ItemEntity? = transaction {
+        val query = """
+            SELECT 
+                id,
+                owner_id,
+                category_id,
+                condition_id,
+                default_damage_policy_id,
+                name,
+                description,
+                images,
+                ST_X(current_location) AS lon,
+                ST_Y(current_location) AS lat,
+                estimated_value,
+                available,
+                metadata,
+                created_at,
+                updated_at
+            FROM items
+            ORDER BY current_location <-> ST_SetSRID(ST_MakePoint(?, ?), 4326)
+            LIMIT 1;
+        """.trimIndent()
+
+        val jdbcConnection = TransactionManager.current().connection.connection as Connection
+
+        jdbcConnection.prepareStatement(query).use { stmt ->
+            stmt.setObject(1, lon)
+            stmt.setObject(2, lat)
+
+            stmt.executeQuery().use { rs ->
+
+                if (rs.next()) {
+                    rs.toItem()
+                } else {
+                    null
+                }
+            }
+        }
+    }
+
+    fun nearbyItems(lat: Double, lon: Double, radius: Double): List<ItemEntity> = transaction {
+        // radius is in meters, if you want degrees remove ::geography
+        val query = """
+            SELECT 
+                id,
+                owner_id,
+                category_id,
+                condition_id,
+                default_damage_policy_id,
+                name,
+                description,
+                images,
+                ST_X(current_location) AS lon,
+                ST_Y(current_location) AS lat,
+                estimated_value,
+                available,
+                metadata,
+                created_at,
+                updated_at
+            FROM items
+            WHERE ST_DWithin(
+                current_location::geography,
+                ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography,
+                ?
+            )
+            ORDER BY ST_Distance(
+                current_location::geography,
+                ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography
+            );
+        """.trimIndent()
+        val jdbcConnection = TransactionManager.current().connection.connection as Connection
+
+        jdbcConnection.prepareStatement(query).use { stmt ->
+            stmt.setObject(1, lon)
+            stmt.setObject(2, lat)
+            stmt.setObject(3, radius)
+            stmt.setObject(4, lon)
+            stmt.setObject(5, lat)
+
+            stmt.executeQuery().use { rs ->
+                val list = mutableListOf<ItemEntity>()
+                while (rs.next()) list += rs.toItem()
+                list
+            }
+        }
     }
 }

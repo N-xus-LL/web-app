@@ -30,6 +30,34 @@ fun Route.locationRoutes() {
             call.respond(HttpStatusCode.OK, response)
         }
 
+        get("/nearby") {
+            val latitude = call.request.queryParameters["lat"]?.toDoubleOrNull()
+            val longitude = call.request.queryParameters["lon"]?.toDoubleOrNull()
+            val radius = call.request.queryParameters["radius"]?.toDoubleOrNull()
+
+            if (latitude == null || longitude == null || radius == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request, missing parameter")
+                return@get
+            }
+            val locations = locationRepository.nearbyLocations(latitude, longitude, radius)
+            val response = locations.map { it.toResponse() }
+            call.respond(HttpStatusCode.OK, response)
+        }
+
+        get("/closest") {
+            val latitude = call.request.queryParameters["lat"]?.toDoubleOrNull()
+            val longitude = call.request.queryParameters["lon"]?.toDoubleOrNull()
+
+            if (latitude == null || longitude == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request, missing parameter")
+                return@get
+            }
+
+            val loc = locationRepository.closestLocation(latitude, longitude)
+            if (loc != null) call.respond(HttpStatusCode.OK, loc.toResponse())
+            else call.respond(HttpStatusCode.NotFound, "Location not found")
+        }
+
         get("/{id}") {
             val id = call.parameters["id"] ?: run {
                 call.respond(HttpStatusCode.BadRequest, "Invalid id")

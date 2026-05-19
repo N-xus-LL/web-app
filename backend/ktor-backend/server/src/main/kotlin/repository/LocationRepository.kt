@@ -128,4 +128,68 @@ class LocationRepository {
             stmt.executeUpdate() > 0
         }
     }
+
+    fun closestLocation(lat: Double, lon: Double): LocationEntity? = transaction {
+        val query = """
+            SELECT
+                id,
+                name,
+                location_type,
+                ST_X(location) AS lon,
+                ST_Y(location) AS lat,
+                source,
+                metadata
+            FROM locations
+            ORDER BY location <-> ST_SetSRID(ST_MakePoint(?, ?), 4326)
+            LIMIT 1
+        """.trimIndent()
+
+        val jdbcConnection = TransactionManager.current().connection.connection as Connection
+
+        jdbcConnection.prepareStatement(query).use { stmt ->
+            stmt.setObject(1, lon)
+            stmt.setObject(2, lat)
+            stmt.executeQuery().use { rs ->
+                if (rs.next()) rs.toLocation() else null
+            }
+        }
+    }
+
+    fun nearbyLocations(lat: Double, lon: Double, radius: Double): List<LocationEntity> = transaction {
+        val query = """
+            SELECT
+                id,
+                name,
+                location_type,
+                ST_X(location) AS lon,
+                ST_Y(location) AS lat,
+                source,
+                metadata
+            FROM locations
+            WHERE ST_DWithin(
+                location::geography,
+                ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography,
+                ?
+            )
+            ORDER BY ST_Distance(
+                location::geography,
+                ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography
+            )
+        """.trimIndent()
+
+        val jdbcConnection = TransactionManager.current().connection.connection as Connection
+
+        jdbcConnection.prepareStatement(query).use { stmt ->
+            stmt.setObject(1, lon)
+            stmt.setObject(2, lat)
+            stmt.setObject(3, radius)
+            stmt.setObject(4, lon)
+            stmt.setObject(5, lat)
+            stmt.executeQuery().use { rs ->
+                val list = mutableListOf<LocationEntity>()
+                while (rs.next()) list += rs.toLocation()
+                list
+            }
+        }
+    }
 }
