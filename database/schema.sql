@@ -156,7 +156,7 @@ CREATE INDEX idx_loans_borrower
 ON loans(borrower_id);
 
 CREATE INDEX idx_locations_geom
-ON locations USING GIST(location)
+ON locations USING GIST(location);
 
 -- =========================================================
 -- UPDATED_AT TRIGGER
