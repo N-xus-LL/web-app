@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="core-wasm-js-1.0.0-SNAPSHOT">
-    <output-path>$PROJECT_DIR$/backend/ktor-backend/core/build/libs</output-path>
-    <root id="archive" name="core-wasm-js-1.0.0-SNAPSHOT.jar">
-      <element id="module-output" name="ktor-backend.core.wasmJsMain" />
-    </root>
-  </artifact>
-</component>

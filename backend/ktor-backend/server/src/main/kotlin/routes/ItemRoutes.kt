@@ -21,6 +21,36 @@ fun Route.itemRoutes() {
             call.respond(HttpStatusCode.OK, response)
         }
 
+        get("/nearby") {
+            val latitude = call.request.queryParameters["lat"]?.toDoubleOrNull()
+            val longitude = call.request.queryParameters["lon"]?.toDoubleOrNull()
+            val radius = call.request.queryParameters["radius"]?.toDoubleOrNull()
+
+            if (latitude == null || longitude == null || radius == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request, missing parameter")
+                return@get
+            }
+            val items = itemRepository.nearbyItems(latitude, longitude, radius)
+            val response = items.map { it.toResponse() }
+            call.respond(HttpStatusCode.OK, response)
+        }
+
+        get("/closest") {
+            val latitude = call.request.queryParameters["lat"]?.toDoubleOrNull()
+            val longitude = call.request.queryParameters["lon"]?.toDoubleOrNull()
+
+            if (latitude == null || longitude == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request, missing parameter")
+                return@get
+            }
+            val item = itemRepository.closestItem(latitude, longitude)
+            if (item != null) {
+                call.respond(HttpStatusCode.OK, item.toResponse())
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Item not found")
+            }
+        }
+
         get("/{id}") {
             val id = call.parameters["id"]
 
