@@ -17,10 +17,10 @@ services:
       - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
 
   backend:
-    build:
-      context: ../backend/ktor-backend
-      dockerfile: Dockerfile
-
+    # build:
+    #   context: ../backend/ktor-backend
+    #   dockerfile: Dockerfile
+    image: n3xusll/lendloop-backend:latest
     container_name: lendloop-backend
 
     depends_on:
