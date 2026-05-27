@@ -37,6 +37,12 @@ const Header = ({ currentUser, onAuthChange }) => {
           <NavLink className="nav-link" to="/items" onClick={closeMenu}>
             Items
           </NavLink>
+          {/* <NavLink className="nav-link" to="/locations" onClick={closeMenu}>
+            Locations
+          </NavLink> */}
+          <NavLink className="nav-link" to="/loans" onClick={closeMenu}>
+            Loans
+          </NavLink>
           <NavLink className="nav-link" to="/users" onClick={closeMenu}>
             Users
           </NavLink>
