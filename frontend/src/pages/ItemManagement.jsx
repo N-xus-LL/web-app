@@ -1,22 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import geocodingService from "../services/geocodingService";
+import ItemCard from "../components/ItemCard";
 import itemService from "../services/itemService";
 import userService from "../services/userService";
-
-const getItemOwnerId = (item) => String(item?.owner_id ?? item?.ownerId ?? "");
-
-const buildUsernameMap = (users) => {
-  const map = {};
-
-  users.forEach((user) => {
-    if (user?.id != null && user?.username) {
-      map[String(user.id)] = user.username;
-    }
-  });
-
-  return map;
-};
+import { buildUsernameMap, getItemOwnerId } from "../utils/userDisplay";
 
 const emptyGeoQuery = {
   lat: "",
@@ -73,11 +61,6 @@ const ItemManagement = ({ currentUser }) => {
 
     loadUsernames();
   }, []);
-
-  const getOwnerUsername = (item) => {
-    const ownerId = getItemOwnerId(item);
-    return ownerId ? usernameById[ownerId] || "Unknown user" : "Unknown user";
-  };
 
   const handleGeoChange = (event) => {
     const { name, value } = event.target;
@@ -316,43 +299,14 @@ const ItemManagement = ({ currentUser }) => {
       {!loading && filteredItems.length > 0 && (
         <div className="item-grid">
           {filteredItems.map((item) => (
-            <article className="item-card" key={item.id}>
-              <div className="item-image">
-                {item.images?.[0] ? (
-                  <img alt={item.name} src={item.images[0]} />
-                ) : (
-                  <span>{item.name?.slice(0, 1) || "I"}</span>
-                )}
-              </div>
-              <div className="item-body">
-                <div className="item-title-row">
-                  <h2>{item.name}</h2>
-                  <span className={item.available ? "status status-open" : "status status-closed"}>
-                    {item.available ? "Available" : "Unavailable"}
-                  </span>
-                </div>
-                <p>{item.description || "No description added."}</p>
-                <div className="item-meta">
-                  <span>Value: {item.estimated_value ?? item.estimatedValue ?? "Not set"}</span>
-                  <span>Owner: {getOwnerUsername(item)}</span>
-                </div>
-                <div className="button-row">
-                  <Link className="secondary-button small-button" to={`/items/${item.id}`}>
-                    View
-                  </Link>
-                  {currentUserId && getItemOwnerId(item) === String(currentUserId) && (
-                    <>
-                      <Link className="secondary-button small-button" to={`/items/${item.id}/edit`}>
-                        Edit
-                      </Link>
-                      <button className="danger-button small-button" type="button" onClick={() => deleteItem(item)}>
-                        {saving === `delete-${item.id}` ? "Deleting..." : "Delete"}
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </article>
+            <ItemCard
+              key={item.id}
+              currentUserId={currentUserId}
+              deleting={saving === `delete-${item.id}`}
+              item={item}
+              usernameById={usernameById}
+              onDelete={deleteItem}
+            />
           ))}
         </div>
       )}

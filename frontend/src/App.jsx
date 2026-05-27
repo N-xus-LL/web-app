@@ -6,6 +6,7 @@ import ItemDetail from "./pages/ItemDetail";
 import ItemForm from "./pages/ItemForm";
 import Home from "./pages/Home";
 import ItemManagement from "./pages/ItemManagement";
+import LoanDetail from "./pages/LoanDetail";
 import Loans from "./pages/Loans";
 import Locations from "./pages/Locations";
 import Login from "./pages/Login";
@@ -13,6 +14,7 @@ import MapPage from "./pages/MapPage";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import Statistics from "./pages/Statistics";
+import UserProfile from "./pages/UserProfile";
 import Users from "./pages/Users";
 import authService from "./services/authService";
 import themeService from "./services/themeService";
@@ -58,7 +60,9 @@ function App() {
             <Route path="/items/:id" element={<ItemDetail currentUser={currentUser} />} />
             <Route path="/locations" element={<Locations />} />
             <Route path="/loans" element={<Loans currentUser={currentUser} />} />
+            <Route path="/loans/:loanId" element={<LoanDetail currentUser={currentUser} />} />
             <Route path="/users" element={<Users />} />
+            <Route path="/users/:userId" element={<UserProfile currentUser={currentUser} />} />
             <Route
               path="/profile"
               element={<Profile currentUser={currentUser} onAuthChange={handleAuthChange} />}

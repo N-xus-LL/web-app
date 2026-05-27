@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import OwnerLink from "../components/OwnerLink";
 import {
   categoryOptions,
   damagePolicyOptions,
@@ -7,20 +8,7 @@ import {
 } from "../constants/referenceData";
 import itemService from "../services/itemService";
 import userService from "../services/userService";
-
-const getItemOwnerId = (item) => String(item?.owner_id ?? item?.ownerId ?? "");
-
-const buildUsernameMap = (users) => {
-  const map = {};
-
-  users.forEach((user) => {
-    if (user?.id != null && user?.username) {
-      map[String(user.id)] = user.username;
-    }
-  });
-
-  return map;
-};
+import { buildUsernameMap, getItemOwnerId } from "../utils/userDisplay";
 
 const getItemLocation = (item) => item.current_location || item.currentLocation || {};
 
@@ -117,7 +105,9 @@ const ItemDetail = ({ currentUser }) => {
             <dl className="item-detail-facts">
               <div>
                 <dt>Owner</dt>
-                <dd>{ownerUsername}</dd>
+                <dd>
+                  <OwnerLink ownerId={ownerId} username={ownerUsername} />
+                </dd>
               </div>
               <div>
                 <dt>Estimated value</dt>
@@ -154,6 +144,17 @@ const ItemDetail = ({ currentUser }) => {
               <div className="button-row">
                 <Link className="primary-button" to={`/items/${item.id}/edit`}>
                   Edit item
+                </Link>
+              </div>
+            )}
+
+            {currentUserId && !isOwner && item.available && (
+              <div className="button-row">
+                <Link
+                  className="primary-button"
+                  to={`/loans?item=${item.id}&lender=${ownerId}&borrower=${currentUserId}`}
+                >
+                  Request loan
                 </Link>
               </div>
             )}

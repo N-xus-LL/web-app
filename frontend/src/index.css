@@ -1217,6 +1217,60 @@ display: flex;
   font-size: 0.82rem;
 }
 
+.owner-link {
+  color: var(--accent-dark);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.owner-link:hover {
+  color: var(--accent);
+}
+
+.user-card-link {
+  color: inherit;
+  transition: border-color 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+
+.user-card-link:hover {
+  border-color: var(--border-nav-hover);
+  box-shadow: var(--shadow-card);
+  transform: translateY(-1px);
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.user-avatar-large {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  font-size: 1.8rem;
+}
+
+.profile-section {
+  margin-top: 24px;
+}
+
+.profile-section .panel-heading {
+  margin-bottom: 12px;
+}
+
+.loan-tabs {
+  margin: 16px 0;
+}
+
+.tab-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+}
+
 .site-footer {
   border-top: 1px solid rgba(23, 32, 42, 0.1);
   background: #101820;

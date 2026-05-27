@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import userService from "../services/userService";
 
 const Users = () => {
@@ -38,14 +39,13 @@ const Users = () => {
       {!loading && !error && users.length > 0 && (
         <div className="user-grid">
           {users.map((user) => (
-            <article className="user-card" key={user.id}>
+            <Link className="user-card user-card-link" key={user.id} to={`/users/${user.id}`}>
               <div className="user-avatar">{user.username?.slice(0, 1) || "U"}</div>
               <div>
                 <h2>{user.username}</h2>
                 <p>{user.first_name || user.firstName} {user.last_name || user.lastName}</p>
-                {/* <span>{user.id}</span> */}
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       )}
