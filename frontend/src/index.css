@@ -1265,6 +1265,74 @@ display: flex;
   margin: 16px 0;
 }
 
+.borrow-request-panel {
+  margin-top: 8px;
+}
+
+.borrow-request-panel h3 {
+  margin: 0 0 8px;
+  color: var(--text-heading);
+}
+
+.borrow-request-panel p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.return-confirm-panel {
+  margin-top: 16px;
+}
+
+.return-confirm-copy {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.loan-workflow-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.loan-workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-meta);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.loan-workflow-step.is-done {
+  color: var(--muted);
+}
+
+.loan-workflow-step.is-current {
+  color: var(--accent-dark);
+  font-weight: 800;
+}
+
+.loan-workflow-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.loan-workflow-step.is-done .loan-workflow-dot {
+  background: var(--accent);
+}
+
+.loan-workflow-step.is-current .loan-workflow-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
 .tab-active {
   border-color: var(--accent);
   background: var(--accent-soft);

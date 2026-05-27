@@ -26,7 +26,7 @@ const ItemCard = ({ item, currentUserId, usernameById, onDelete, deleting }) => 
         </div>
         <p>{item.description || "No description added."}</p>
         <div className="item-meta">
-          <span>Value: {item.estimated_value ?? item.estimatedValue ?? "Not set"}</span>
+          <span>Value: {item.estimated_value ?? item.estimatedValue ?? "Not set"}€</span>
           <span>
             Owner: <OwnerLink ownerId={ownerId} username={ownerUsername} />
           </span>

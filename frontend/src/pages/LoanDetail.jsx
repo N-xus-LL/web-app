@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { itemConditionOptions, loanStatusOptions } from "../constants/referenceData";
+import { Link, useParams } from "react-router-dom";
+import LoanWorkflowSteps from "../components/LoanWorkflowSteps";
+import { itemConditionOptions } from "../constants/referenceData";
 import itemService from "../services/itemService";
 import loanService from "../services/loanService";
 import userService from "../services/userService";
 import { buildUsernameMap } from "../utils/userDisplay";
-
-const getLoanField = (loan, snakeKey, camelKey) => loan?.[snakeKey] ?? loan?.[camelKey];
-
-const getStatusLabel = (status) =>
-  loanStatusOptions.find((option) => option.value === status)?.label || status || "Unknown";
+import {
+  getLoanField,
+  getLoanRecord,
+  getLoanStatus,
+  getStatusLabel,
+  LOAN_STATUS,
+  updateItemAfterReturn
+} from "../utils/loanWorkflow";
 
 const LoanDetail = ({ currentUser }) => {
   const { loanId } = useParams();
-  const navigate = useNavigate();
   const currentUserId = currentUser?.user?.id;
   const [loan, setLoan] = useState(null);
   const [itemName, setItemName] = useState("");
@@ -22,6 +25,7 @@ const LoanDetail = ({ currentUser }) => {
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [returnCondition, setReturnCondition] = useState("");
 
   const loadLoan = async () => {
     setLoading(true);
@@ -33,7 +37,7 @@ const LoanDetail = ({ currentUser }) => {
         userService.getUsers()
       ]);
 
-      const record = loanData?.loan || loanData;
+      const record = getLoanRecord(loanData);
       setLoan(record);
       setUsernameById(buildUsernameMap(Array.isArray(users) ? users : []));
 
@@ -63,36 +67,94 @@ const LoanDetail = ({ currentUser }) => {
   const lenderId = String(getLoanField(loan, "lender_id", "lenderId") || "");
   const borrowerId = String(getLoanField(loan, "borrower_id", "borrowerId") || "");
   const itemId = getLoanField(loan, "item_id", "itemId");
-  const status = getLoanField(loan, "status", "status");
-  const canManage =
-    currentUserId && (lenderId === String(currentUserId) || borrowerId === String(currentUserId));
+  const status = getLoanStatus(loan);
+  const isLender = Boolean(currentUserId) && lenderId === String(currentUserId);
+  const isBorrower = Boolean(currentUserId) && borrowerId === String(currentUserId);
+  const canView = isLender || isBorrower;
 
-  const handleReturn = async () => {
-    const conditionOnReturnId = window.prompt(
-      "Condition on return",
-      itemConditionOptions[0]?.value || "good"
-    );
-    if (!conditionOnReturnId) {
-      return;
-    }
-
-    setSaving("return");
+  const handleApprove = async () => {
+    setSaving("approve");
     setError("");
     setMessage("");
 
     try {
-      await loanService.returnLoan(loanId, conditionOnReturnId);
-      setMessage("Loan marked as returned.");
+      await loanService.updateLoan(loanId, { status: LOAN_STATUS.ACTIVE });
+      if (itemId) {
+        await setItemAvailability(itemId, false);
+      }
+      setMessage("Borrow approved. Item is now on loan.");
       await loadLoan();
     } catch (requestError) {
-      setError(requestError.message || "Failed to return loan");
+      setError(requestError.message || "Failed to approve borrow");
     } finally {
       setSaving("");
     }
   };
 
-  const handleCancel = async () => {
-    if (!window.confirm("Cancel this loan?")) {
+  const handleReject = async () => {
+    if (!window.confirm("Reject this borrow request?")) {
+      return;
+    }
+
+    setSaving("reject");
+    setError("");
+    setMessage("");
+
+    try {
+      await loanService.cancelLoan(loanId);
+      setMessage("Borrow request rejected.");
+      await loadLoan();
+    } catch (requestError) {
+      setError(requestError.message || "Failed to reject request");
+    } finally {
+      setSaving("");
+    }
+  };
+
+  const handleMarkReturned = async () => {
+    setSaving("return");
+    setError("");
+    setMessage("");
+
+    try {
+      await loanService.updateLoan(loanId, { status: LOAN_STATUS.RETURNED });
+      setMessage("Return submitted. Waiting for owner to confirm.");
+      await loadLoan();
+    } catch (requestError) {
+      setError(requestError.message || "Failed to submit return");
+    } finally {
+      setSaving("");
+    }
+  };
+
+  const handleConfirmReturn = async (event) => {
+    event.preventDefault();
+
+    if (!returnCondition) {
+      setError("Select the item condition on return.");
+      return;
+    }
+
+    setSaving("confirm");
+    setError("");
+    setMessage("");
+
+    try {
+      await loanService.returnLoan(loanId, returnCondition);
+      if (itemId) {
+        await updateItemAfterReturn(itemId, returnCondition);
+      }
+      setMessage("Return confirmed. Item condition updated and listed as available.");
+      await loadLoan();
+    } catch (requestError) {
+      setError(requestError.message || "Failed to confirm return");
+    } finally {
+      setSaving("");
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!window.confirm("Cancel your borrow request?")) {
       return;
     }
 
@@ -102,31 +164,25 @@ const LoanDetail = ({ currentUser }) => {
 
     try {
       await loanService.cancelLoan(loanId);
-      setMessage("Loan cancelled.");
+      setMessage("Borrow request cancelled.");
       await loadLoan();
     } catch (requestError) {
-      setError(requestError.message || "Failed to cancel loan");
+      setError(requestError.message || "Failed to cancel request");
     } finally {
       setSaving("");
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("Delete this loan permanently?")) {
-      return;
-    }
-
-    setSaving("delete");
-    setError("");
-
-    try {
-      await loanService.deleteLoan(loanId);
-      navigate("/loans");
-    } catch (requestError) {
-      setError(requestError.message || "Failed to delete loan");
-      setSaving("");
-    }
-  };
+  if (!loading && loan && currentUserId && !canView) {
+    return (
+      <section className="page-section">
+        <div className="alert alert-error">You can only view loans you are part of.</div>
+        <Link className="secondary-button" to="/loans">
+          Back to my loans
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section className="page-section">
@@ -136,7 +192,7 @@ const LoanDetail = ({ currentUser }) => {
           <h1>Loan details</h1>
         </div>
         <Link className="secondary-button" to="/loans">
-          Back to loans
+          Back to my loans
         </Link>
       </div>
 
@@ -144,14 +200,16 @@ const LoanDetail = ({ currentUser }) => {
       {message && <div className="alert alert-success">{message}</div>}
       {loading && <div className="state-panel">Loading loan...</div>}
 
-      {!loading && !error && loan && (
+      {!loading && !error && loan && canView && (
         <div className="resource-panel">
           <div className="item-title-row">
             <h2>{itemName}</h2>
-            <span className={`status status-${status === "active" ? "open" : "closed"}`}>
+            <span className={`status status-${status === LOAN_STATUS.ACTIVE ? "open" : "closed"}`}>
               {getStatusLabel(status)}
             </span>
           </div>
+
+          <LoanWorkflowSteps status={status} />
 
           <dl className="item-detail-facts">
             <div>
@@ -183,51 +241,98 @@ const LoanDetail = ({ currentUser }) => {
               </dd>
             </div>
             <div>
-              <dt>Start date</dt>
-              <dd>{getLoanField(loan, "start_date", "startDate") || "Not set"}</dd>
-            </div>
-            <div>
-              <dt>Expected return</dt>
-              <dd>{getLoanField(loan, "expected_return_date", "expectedReturnDate") || "Not set"}</dd>
-            </div>
-            <div>
-              <dt>Actual return</dt>
-              <dd>{getLoanField(loan, "actual_return_date", "actualReturnDate") || "Not returned yet"}</dd>
-            </div>
-            <div>
               <dt>Notes</dt>
               <dd>{getLoanField(loan, "notes", "notes") || "None"}</dd>
             </div>
           </dl>
 
-          {canManage && (
-            <div className="button-row">
+          <div className="button-row">
+            {isLender && status === LOAN_STATUS.PENDING && (
+              <>
+                <button
+                  className="primary-button small-button"
+                  disabled={Boolean(saving)}
+                  type="button"
+                  onClick={handleApprove}
+                >
+                  {saving === "approve" ? "Approving..." : "Approve borrow"}
+                </button>
+                <button
+                  className="danger-button small-button"
+                  disabled={Boolean(saving)}
+                  type="button"
+                  onClick={handleReject}
+                >
+                  {saving === "reject" ? "Rejecting..." : "Reject"}
+                </button>
+              </>
+            )}
+
+            {isBorrower && status === LOAN_STATUS.PENDING && (
               <button
                 className="secondary-button small-button"
                 disabled={Boolean(saving)}
                 type="button"
-                onClick={handleReturn}
+                onClick={handleCancelRequest}
               >
-                {saving === "return" ? "Returning..." : "Return item"}
+                {saving === "cancel" ? "Cancelling..." : "Cancel request"}
               </button>
+            )}
+
+            {isBorrower && status === LOAN_STATUS.ACTIVE && (
               <button
-                className="secondary-button small-button"
+                className="primary-button small-button"
                 disabled={Boolean(saving)}
                 type="button"
-                onClick={handleCancel}
+                onClick={handleMarkReturned}
               >
-                {saving === "cancel" ? "Cancelling..." : "Cancel loan"}
+                {saving === "return" ? "Submitting..." : "Mark as returned"}
               </button>
-              <button
-                className="danger-button small-button"
-                disabled={Boolean(saving)}
-                type="button"
-                onClick={handleDelete}
-              >
-                {saving === "delete" ? "Deleting..." : "Delete"}
+            )}
+
+          </div>
+
+          {isLender && status === LOAN_STATUS.RETURNED && (
+            <form className="resource-panel form-card return-confirm-panel" onSubmit={handleConfirmReturn}>
+              <div className="panel-heading">
+                <h2>Confirm return</h2>
+              </div>
+              <p className="return-confirm-copy">
+                Check the item and record its condition before marking it available again.
+              </p>
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="condition_on_return">Condition on return</label>
+                  <select
+                    id="condition_on_return"
+                    name="condition_on_return"
+                    required
+                    value={returnCondition}
+                    onChange={(event) => setReturnCondition(event.target.value)}
+                  >
+                    <option value="">Select condition</option>
+                    {itemConditionOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <button className="primary-button" disabled={Boolean(saving)} type="submit">
+                {saving === "confirm" ? "Confirming..." : "Confirm return"}
               </button>
-            </div>
+            </form>
           )}
+        </div>
+      )}
+
+      {!currentUserId && !loading && (
+        <div className="state-panel">
+          <Link className="owner-link" to="/login">
+            Log in
+          </Link>{" "}
+          to manage this loan.
         </div>
       )}
     </section>

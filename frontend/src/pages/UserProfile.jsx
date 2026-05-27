@@ -5,14 +5,12 @@ import itemService from "../services/itemService";
 import loanService from "../services/loanService";
 import userService from "../services/userService";
 import { buildUsernameMap } from "../utils/userDisplay";
-import { loanStatusOptions } from "../constants/referenceData";
-
-const getLoanRecord = (entry) => entry?.loan || entry;
-
-const getLoanField = (loan, snakeKey, camelKey) => loan?.[snakeKey] ?? loan?.[camelKey];
-
-const getStatusLabel = (status) =>
-  loanStatusOptions.find((option) => option.value === status)?.label || status || "Unknown";
+import {
+  getLoanField,
+  getLoanRecord,
+  getLoanStatus,
+  getStatusLabel
+} from "../utils/loanWorkflow";
 
 const UserProfile = ({ currentUser }) => {
   const { userId } = useParams();
@@ -75,7 +73,7 @@ const UserProfile = ({ currentUser }) => {
     const itemId = getLoanField(loan, "item_id", "itemId");
     const lenderId = String(getLoanField(loan, "lender_id", "lenderId") || "");
     const borrowerId = String(getLoanField(loan, "borrower_id", "borrowerId") || "");
-    const status = getLoanField(loan, "status", "status");
+    const status = getLoanStatus(loan);
 
     return (
       <article className="list-row" key={loanId}>

@@ -12,9 +12,9 @@ export const damagePolicyOptions = [
 ];
 
 export const loanStatusOptions = [
-  { value: "pending", label: "Pending" },
-  { value: "active", label: "Active" },
-  { value: "returned", label: "Returned" },
+  { value: "pending", label: "Awaiting approval" },
+  { value: "active", label: "Borrowed" },
+  { value: "returned", label: "Return pending" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" }
 ];
