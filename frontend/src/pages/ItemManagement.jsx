@@ -1,6 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import geocodingService from "../services/geocodingService";
 import itemService from "../services/itemService";
+import userService from "../services/userService";
+
+const getItemOwnerId = (item) => String(item?.owner_id ?? item?.ownerId ?? "");
+
+const buildUsernameMap = (users) => {
+  const map = {};
+
+  users.forEach((user) => {
+    if (user?.id != null && user?.username) {
+      map[String(user.id)] = user.username;
+    }
+  });
+
+  return map;
+};
 
 const emptyGeoQuery = {
   lat: "",
@@ -8,15 +24,20 @@ const emptyGeoQuery = {
   radius: "5"
 };
 
-const ItemManagement = () => {
+const ItemManagement = ({ currentUser }) => {
+  const currentUserId = currentUser?.user?.id;
   const [items, setItems] = useState([]);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [geoQuery, setGeoQuery] = useState(emptyGeoQuery);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [addressQuery, setAddressQuery] = useState("");
+  const [locationHint, setLocationHint] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  const [usernameById, setUsernameById] = useState({});
 
   const filteredItems = items.filter((item) =>
     (item.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase())
@@ -29,7 +50,6 @@ const ItemManagement = () => {
     try {
       const response = await itemService.getItems();
       setItems(Array.isArray(response) ? response : []);
-      setSelectedItem(null);
     } catch (requestError) {
       setError(requestError.message || "Failed to load items");
     } finally {
@@ -41,6 +61,24 @@ const ItemManagement = () => {
     loadItems();
   }, []);
 
+  useEffect(() => {
+    const loadUsernames = async () => {
+      try {
+        const response = await userService.getUsers();
+        setUsernameById(buildUsernameMap(Array.isArray(response) ? response : []));
+      } catch {
+        setUsernameById({});
+      }
+    };
+
+    loadUsernames();
+  }, []);
+
+  const getOwnerUsername = (item) => {
+    const ownerId = getItemOwnerId(item);
+    return ownerId ? usernameById[ownerId] || "Unknown user" : "Unknown user";
+  };
+
   const handleGeoChange = (event) => {
     const { name, value } = event.target;
     setGeoQuery((current) => ({ ...current, [name]: value }));
@@ -51,31 +89,83 @@ const ItemManagement = () => {
     setMessage("");
   };
 
-  const viewItem = async (id) => {
+  const setGeoCoordinates = (latitude, longitude, hint = "") => {
+    setGeoQuery((current) => ({
+      ...current,
+      lat: String(Number(latitude.toFixed(6))),
+      lon: String(Number(longitude.toFixed(6)))
+    }));
+    setLocationHint(hint || `Search location: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+  };
+
+  const handleUseCurrentLocation = async () => {
+    setLocating(true);
     clearStatus();
-    setSaving(`view-${id}`);
+    setLocationHint("");
 
     try {
-      const item = await itemService.getItem(id);
-      setSelectedItem(item);
-      setMessage(`Loaded item: ${item.name}`);
+      const position = await geocodingService.getCurrentPosition();
+      setGeoCoordinates(position.latitude, position.longitude, "Using your current location.");
     } catch (requestError) {
-      setError(requestError.message || "Failed to load item");
+      setError(requestError.message || "Could not get your current location.");
     } finally {
-      setSaving("");
+      setLocating(false);
     }
   };
 
-  const deleteItem = async (id) => {
+  const handleAddressSearch = async (event) => {
+    event.preventDefault();
+    setGeocoding(true);
+    clearStatus();
+    setLocationHint("");
+
+    try {
+      const result = await geocodingService.geocodeAddress(addressQuery);
+
+      if (!result) {
+        setError("Address not found. Try a more specific address.");
+        return;
+      }
+
+      setGeoCoordinates(result.latitude, result.longitude, result.label);
+    } catch (requestError) {
+      setError(requestError.message || "Address search failed.");
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  const resetFilters = () => {
+    setGeoQuery(emptyGeoQuery);
+    setAddressQuery("");
+    setLocationHint("");
+    loadItems();
+  };
+
+  const ensureSearchLocation = () => {
+    if (!geoQuery.lat || !geoQuery.lon) {
+      setError("Set a search location using your address or current position.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const deleteItem = async (item) => {
+    if (!currentUserId || getItemOwnerId(item) !== String(currentUserId)) {
+      setError("You can only delete items that belong to you.");
+      return;
+    }
+
     if (!window.confirm("Delete this item?")) {
       return;
     }
 
     clearStatus();
-    setSaving(`delete-${id}`);
+    setSaving(`delete-${item.id}`);
 
     try {
-      await itemService.deleteItem(id);
+      await itemService.deleteItem(item.id);
       setMessage("Item deleted.");
       await loadItems();
     } catch (requestError) {
@@ -88,12 +178,16 @@ const ItemManagement = () => {
   const loadNearby = async (event) => {
     event.preventDefault();
     clearStatus();
+
+    if (!ensureSearchLocation()) {
+      return;
+    }
+
     setSaving("nearby");
 
     try {
       const response = await itemService.getNearbyItems(geoQuery);
       setItems(Array.isArray(response) ? response : []);
-      setSelectedItem(null);
       setMessage("Nearby items loaded.");
     } catch (requestError) {
       setError(requestError.message || "Failed to load nearby items");
@@ -104,12 +198,16 @@ const ItemManagement = () => {
 
   const loadClosest = async () => {
     clearStatus();
+
+    if (!ensureSearchLocation()) {
+      return;
+    }
+
     setSaving("closest");
 
     try {
       const item = await itemService.getClosestItem(geoQuery);
       setItems(item ? [item] : []);
-      setSelectedItem(item);
       setMessage("Closest item loaded.");
     } catch (requestError) {
       setError(requestError.message || "Failed to load closest item");
@@ -145,18 +243,46 @@ const ItemManagement = () => {
           />
         </div>
 
-        <div className="filter-fields">
+        <div className="filter-location-block">
           <div className="field compact-field">
-            <label htmlFor="lat">Lat</label>
-            <input id="lat" name="lat" type="number" step="any" value={geoQuery.lat} onChange={handleGeoChange} />
+            <label htmlFor="filter-address">Search location</label>
+            <input
+              id="filter-address"
+              placeholder="Type an address..."
+              type="text"
+              value={addressQuery}
+              onChange={(event) => setAddressQuery(event.target.value)}
+            />
           </div>
-          <div className="field compact-field">
-            <label htmlFor="lon">Lon</label>
-            <input id="lon" name="lon" type="number" step="any" value={geoQuery.lon} onChange={handleGeoChange} />
+          <div className="button-row location-button-row">
+            <button
+              className="secondary-button small-button"
+              disabled={geocoding || !addressQuery.trim()}
+              type="button"
+              onClick={handleAddressSearch}
+            >
+              {geocoding ? "Searching..." : "Find from address"}
+            </button>
+            <button
+              className="secondary-button small-button"
+              disabled={locating}
+              type="button"
+              onClick={handleUseCurrentLocation}
+            >
+              {locating ? "Getting location..." : "Use my location"}
+            </button>
           </div>
-          <div className="field compact-field">
-            <label htmlFor="radius">Radius</label>
-            <input id="radius" name="radius" type="number" step="any" value={geoQuery.radius} onChange={handleGeoChange} />
+          {locationHint && <p className="location-hint">{locationHint}</p>}
+          <div className="filter-radius-row">
+            {geoQuery.lat && geoQuery.lon && (
+              <p className="coords-display">
+                Lat {geoQuery.lat}, Lon {geoQuery.lon}
+              </p>
+            )}
+            <div className="field compact-field filter-radius-field">
+              <label htmlFor="radius">Radius (m)</label>
+              <input id="radius" name="radius" type="number" min="0" step="any" value={geoQuery.radius} onChange={handleGeoChange} />
+            </div>
           </div>
         </div>
 
@@ -167,7 +293,7 @@ const ItemManagement = () => {
           <button className="secondary-button small-button" disabled={saving === "closest"} type="button" onClick={loadClosest}>
             Closest
           </button>
-          <button className="link-button" type="button" onClick={loadItems}>
+          <button className="link-button" type="button" onClick={resetFilters}>
             Reset
           </button>
         </div>
@@ -208,18 +334,22 @@ const ItemManagement = () => {
                 <p>{item.description || "No description added."}</p>
                 <div className="item-meta">
                   <span>Value: {item.estimated_value ?? item.estimatedValue ?? "Not set"}</span>
-                  <span>ID: {item.id}</span>
+                  <span>Owner: {getOwnerUsername(item)}</span>
                 </div>
                 <div className="button-row">
-                  <button className="secondary-button small-button" type="button" onClick={() => viewItem(item.id)}>
-                    {saving === `view-${item.id}` ? "Loading..." : "View"}
-                  </button>
-                  <Link className="secondary-button small-button" to={`/items/${item.id}/edit`}>
-                    Edit
+                  <Link className="secondary-button small-button" to={`/items/${item.id}`}>
+                    View
                   </Link>
-                  <button className="danger-button small-button" type="button" onClick={() => deleteItem(item.id)}>
-                    {saving === `delete-${item.id}` ? "Deleting..." : "Delete"}
-                  </button>
+                  {currentUserId && getItemOwnerId(item) === String(currentUserId) && (
+                    <>
+                      <Link className="secondary-button small-button" to={`/items/${item.id}/edit`}>
+                        Edit
+                      </Link>
+                      <button className="danger-button small-button" type="button" onClick={() => deleteItem(item)}>
+                        {saving === `delete-${item.id}` ? "Deleting..." : "Delete"}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </article>
@@ -227,12 +357,6 @@ const ItemManagement = () => {
         </div>
       )}
 
-      {selectedItem && (
-        <div className="resource-panel detail-panel">
-          <h2>Selected item</h2>
-          <pre>{JSON.stringify(selectedItem, null, 2)}</pre>
-        </div>
-      )}
     </section>
   );
 };
