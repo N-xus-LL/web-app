@@ -10,7 +10,12 @@ export default defineConfig({
       "/items": "http://localhost:8080",
       "/locations": "http://localhost:8080",
       "/api": "http://localhost:8080",
-      "/json": "http://localhost:8080"
+      "/json": "http://localhost:8080",
+      "/nominatim": {
+        target: "https://nominatim.openstreetmap.org",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/nominatim/, "")
+      }
     }
   }
 });
