@@ -3,6 +3,8 @@ h2 = "2.4.240"
 kotlin = "2.3.20"
 kotlinx-rpc = "0.10.2"
 logback = "1.5.21"
+exposed = "1.2.0"
+protolite-well-known-types = "18.0.1"
 
 [libraries]
 h2database-h2 = { module = "com.h2database:h2", version.ref = "h2" }
@@ -12,6 +14,9 @@ kotlinx-rpc-krpcSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-rp
 kotlinx-rpc-server = { module = "org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server", version.ref = "kotlinx-rpc" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+protolite-well-known-types = { group = "com.google.firebase", name = "protolite-well-known-types", version.ref = "protolite-well-known-types" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
