@@ -295,6 +295,10 @@ button {
   transform: none;
 }
 
+.button-to-right {
+  margin-left: auto;
+}
+
 .content {
   flex: 1;
 }
@@ -1033,7 +1037,7 @@ display: flex;
   background-size: 42px 42px, 42px 42px, auto;
 }
 
-.map-card {
+#map, .map-card {
   position: absolute;
   left: 24px;
   bottom: 24px;
@@ -1041,8 +1045,9 @@ display: flex;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--map-card-bg);
-  padding: 20px;
+  padding: 10px;
   box-shadow: var(--shadow-map-card);
+  z-index: 100000;
 }
 
 .map-card h2,

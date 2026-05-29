@@ -1,11 +1,12 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { Link, useLocation } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import itemService from "../services/itemService";
 import ItemCard from "../components/ItemCard";
 import locationService from "../services/locationService";
 import L from 'leaflet';
+import geocodingService from "../services/geocodingService";
 
 const MapPage = () => {
   const mapRef = useRef(null);
@@ -14,23 +15,33 @@ const MapPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
+  const [currentPosition, setCurrentPosition] = useState([0, 0]);
+
+  var {state} = useLocation();
+
   const loadItems = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await itemService.getItems();
-      setItems(Array.isArray(response) ? response : []);
+        const response = await itemService.getItems();
+        setItems(Array.isArray(response) ? response : []);
     } catch (requestError) {
-      setError(requestError.message || "Failed to load items");
+        setError(requestError.message || "Failed to load items");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadItems();
-  }, []);
+      console.log(state);
+      if (!state?.items) {
+        loadItems();
+      } else {
+        setItems(state.items);
+      }
+  }, [state]);
+
 
   const loadLocations = async () => {
     setLoading(true);
@@ -48,6 +59,22 @@ const MapPage = () => {
 
   useEffect(() => {
     loadLocations();
+  }, []);
+
+  const getCurrentLocation = async () => {
+      try {
+          const position = await geocodingService.getCurrentPosition();
+          setCurrentPosition([position.latitude, position.longitude]);
+      } catch (requestError) {
+          setError(requestError.message || "Could not get your current location.");
+      }
+  }
+  useEffect(() => {
+      const interval = setInterval(() => {
+          getCurrentLocation();
+      }, 5000);
+
+      return () => clearInterval(interval);
   }, []);
 
   const customIcon = L.Icon.extend({
@@ -77,28 +104,60 @@ const MapPage = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {!loading && items.length > 0 &&
-              items.map((item) => (
-                  <Marker position={[item.current_location.latitude, item.current_location.longitude]} icon={blueIcon}>
-                      <Popup>
-                          <Link to={`/items/${item.id}`}>
-                               {item.name}
-                          </Link>
-                          <br />
-                          {item.description}
-                      </Popup>
-                  </Marker>
-          ))}
-          {!loading && locations.length > 0 &&
-               locations.map((location) => (
-                   <Marker position={[location.location.latitude, location.location.longitude]} icon={greenIcon}>
-                      <Popup>
-                         {location.name}
-                         <br />
-                         {location.locationType}
-                      </Popup>
-                   </Marker>
-          ))}
+          <LayersControl position="topright">
+                <LayersControl.Overlay checked name="Items">
+                    <LayerGroup>
+                    {!loading && items.length > 0 &&
+                        items.map((item) => (
+                            <Marker position={[item.current_location.latitude, item.current_location.longitude]} icon={blueIcon} title={item.name}>
+                                <Popup>
+                                    <Link to={`/items/${item.id}`}>
+                                         {item.name}
+                                    </Link>
+                                    <br />
+                                    {item.description}
+                               </Popup>
+                            </Marker>
+                    ))}
+                    </LayerGroup>
+                </LayersControl.Overlay>
+
+                <LayersControl.Overlay checked name="Locations">
+                    <LayerGroup>
+                      {!loading && locations.length > 0 &&
+                           locations.map((location) => (
+                               <Marker position={[location.location.latitude, location.location.longitude]} icon={greenIcon} title={location.name}>
+                                  <Popup>
+                                     {location.name}
+                                     <br />
+                                     {location.locationType}
+                                  </Popup>
+                               </Marker>
+                      ))}
+                    </LayerGroup>
+                </LayersControl.Overlay>
+          </LayersControl>
+
+          <div className="map-card" position="bottomleft">
+              {currentPosition[0] != 0 && currentPosition[1] != 0 && (
+              <div>🔴 Your Location</div>
+              )}
+              <div>🔵 Items</div>
+              <div>🟢 Locations</div>
+          </div>
+
+
+          {currentPosition[0] != 0 && currentPosition[1] != 0 && (
+              <Marker position={currentPosition} icon={redIcon} title={"You"}>
+                  <Popup>
+                      Your Location
+                  </Popup>
+              </Marker>
+          )}
+
+          {state?.circle && (
+              <Circle center={[state?.circle.lat, state?.circle.lon]} radius={state?.circle.radius} />
+          )}
       </MapContainer>
       </div>
     </section>

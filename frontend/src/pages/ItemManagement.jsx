@@ -26,6 +26,7 @@ const ItemManagement = ({ currentUser }) => {
   const [locating, setLocating] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [usernameById, setUsernameById] = useState({});
+  const [usingNearby, setUsingNearby] = useState(false);
 
   const filteredItems = items.filter((item) =>
     (item.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase())
@@ -123,6 +124,7 @@ const ItemManagement = ({ currentUser }) => {
     setAddressQuery("");
     setLocationHint("");
     loadItems();
+    setUsingNearby(false);
   };
 
   const ensureSearchLocation = () => {
@@ -172,6 +174,7 @@ const ItemManagement = ({ currentUser }) => {
       const response = await itemService.getNearbyItems(geoQuery);
       setItems(Array.isArray(response) ? response : []);
       setMessage("Nearby items loaded.");
+      setUsingNearby(true);
     } catch (requestError) {
       setError(requestError.message || "Failed to load nearby items");
     } finally {
@@ -192,6 +195,7 @@ const ItemManagement = ({ currentUser }) => {
       const item = await itemService.getClosestItem(geoQuery);
       setItems(item ? [item] : []);
       setMessage("Closest item loaded.");
+      setUsingNearby(false);
     } catch (requestError) {
       setError(requestError.message || "Failed to load closest item");
     } finally {
@@ -279,6 +283,15 @@ const ItemManagement = ({ currentUser }) => {
           <button className="link-button" type="button" onClick={resetFilters}>
             Reset
           </button>
+          {usingNearby ? (
+                  <Link className="secondary-button small-button button-to-right" to="/map" state={{ items:items, circle:geoQuery }}>
+                        Show on map
+                  </Link>
+                ) : (
+                  <Link className="secondary-button small-button button-to-right" to="/map" state={{ items }}>
+                       Show on map
+                  </Link>
+                )}
         </div>
       </form>
 
