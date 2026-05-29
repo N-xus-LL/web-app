@@ -1082,6 +1082,14 @@ display: flex;
   left: 76%;
 }
 
+.map {
+  position: relative;
+  min-height: 480px;
+  overflow: hidden;
+  border: 1px solid var(--map-border);
+  border-radius: 8px;
+}
+
 .stats-page-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
