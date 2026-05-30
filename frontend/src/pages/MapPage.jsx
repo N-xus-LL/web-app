@@ -7,10 +7,7 @@ import ItemCard from "../components/ItemCard";
 import locationService from "../services/locationService";
 import L from 'leaflet';
 import geocodingService from "../services/geocodingService";
-import {
-  createCircleIcon,
-  createPinIcon
-} from "../utils/createMapIcons";
+import { createCircleIcon, createPinIcon } from "../utils/createMapIcons";
 
 const MapPage = () => {
   const mapRef = useRef(null);
@@ -73,9 +70,10 @@ const MapPage = () => {
       }
   }
   useEffect(() => {
+      getCurrentLocation();
       const interval = setInterval(() => {
           getCurrentLocation();
-      }, 5000);
+      }, 10000);
 
       return () => clearInterval(interval);
   }, []);

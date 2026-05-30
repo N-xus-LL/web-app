@@ -44,6 +44,12 @@ const deleteItem = async (id) => {
   });
 };
 
+const getUserItems = async (id) => {
+  return authService.request(`/items/user/${id}`, {
+    method: "GET"
+  });
+};
+
 const itemService = {
   getItems,
   getNearbyItems,
@@ -51,7 +57,8 @@ const itemService = {
   getItem,
   createItem,
   updateItem,
-  deleteItem
+  deleteItem,
+  getUserItems
 };
 
 export default itemService;

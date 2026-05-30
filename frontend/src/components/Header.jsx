@@ -109,6 +109,9 @@ const Header = ({ currentUser, onAuthChange, theme, onThemeToggle }) => {
                     <NavLink className="dropdown-item" to="/statistics" onClick={closeMenu}>
                       Statistics
                     </NavLink>
+                    <NavLink className="dropdown-item" to="/users/items" onClick={closeMenu}>
+                      My Items
+                    </NavLink>
                     <button className="dropdown-item" type="button" onClick={handleLogout}>
                       Logout
                     </button>

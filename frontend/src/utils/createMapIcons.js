@@ -72,7 +72,6 @@ export const deriveMarkerColors = (color) => {
         var r = (colorInt >> 16) & 255;
         var g = (colorInt >> 8) & 255;
         var b = colorInt & 255;
-        console.log(r, g, b);
 
         var baseColor = color;
         var secondaryColorLighter = rgbToHex([r - 20, g - 25, b - 26]);

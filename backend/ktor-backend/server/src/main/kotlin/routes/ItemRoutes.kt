@@ -51,6 +51,20 @@ fun Route.itemRoutes() {
             }
         }
 
+        get("/user/{id}") {
+            val id = call.parameters["id"]
+
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid user id")
+                return@get
+            }
+
+            val items = itemRepository.getUserItems(UUID.fromString(id))
+
+            val response = items.map { it.toResponse() }
+            call.respond(HttpStatusCode.OK, response)
+        }
+
         get("/{id}") {
             val id = call.parameters["id"]
 

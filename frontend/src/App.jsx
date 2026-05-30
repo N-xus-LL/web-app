@@ -16,6 +16,7 @@ import Register from "./pages/Register";
 import Statistics from "./pages/Statistics";
 import UserProfile from "./pages/UserProfile";
 import Users from "./pages/Users";
+import UserItems from "./pages/UserItems";
 import authService from "./services/authService";
 import themeService from "./services/themeService";
 import "./index.css";
@@ -62,6 +63,7 @@ function App() {
             <Route path="/loans" element={<Loans currentUser={currentUser} />} />
             <Route path="/loans/:loanId" element={<LoanDetail currentUser={currentUser} />} />
             <Route path="/users" element={<Users />} />
+            <Route path="/users/items" element={<UserItems currentUser={currentUser} />} />
             <Route path="/users/:userId" element={<UserProfile currentUser={currentUser} />} />
             <Route
               path="/profile"
