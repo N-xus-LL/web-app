@@ -31,6 +31,35 @@ CREATE TABLE categories (
     metadata_schema JSONB DEFAULT '{}'::jsonb
 );
 
+CREATE TABLE location_sources (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT
+);
+
+CREATE TABLE countries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL UNIQUE,
+    country_code VARCHAR(3) NOT NULL UNIQUE
+);
+
+CREATE TABLE localities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    country_id UUID NOT NULL REFERENCES countries(id) ON DELETE RESTRICT,
+    name TEXT NOT NULL,
+
+    locality_type TEXT,
+    region TEXT,
+    municipality TEXT,
+    postal_code TEXT,
+
+    source_id TEXT NOT NULL DEFAULT 'manual' REFERENCES location_sources(id),
+    external_id TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb,
+
+    UNIQUE (source_id, external_id)
+);
+
 -- =========================================================
 -- USERS
 -- =========================================================
@@ -118,19 +147,45 @@ CREATE TABLE loans (
     CONSTRAINT different_parties CHECK (lender_id != borrower_id)
 );
 
+-- =========================================================
+-- LOCATIONS AND LOCKERS
+-- =========================================================
 
 CREATE TABLE locations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-    name TEXT NOT NULL,
-
-    location_type TEXT,
-
+    locality_id UUID NOT NULL REFERENCES localities(id) ON DELETE RESTRICT,
     location GEOMETRY(POINT, 4326) NOT NULL,
+    location_type TEXT NOT NULL,
+    address TEXT NOT NULL,
 
-    source TEXT DEFAULT 'manual',
-
+    source_id TEXT NOT NULL DEFAULT 'manual' REFERENCES location_sources(id),
     metadata JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE TABLE locker_stations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    location_id UUID NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+    station_name TEXT NOT NULL,
+    working_times JSONB NOT NULL DEFAULT '{}'::jsonb
+);
+
+CREATE TABLE lockers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    station_id UUID NOT NULL REFERENCES locker_stations(id) ON DELETE CASCADE,
+    box_number SMALLINT NOT NULL,
+
+    max_weight_kg DOUBLE PRECISION NOT NULL,
+    max_length_cm DOUBLE PRECISION NOT NULL,
+    max_width_cm  DOUBLE PRECISION NOT NULL,
+    max_height_cm DOUBLE PRECISION NOT NULL,
+
+    available BOOLEAN DEFAULT true NOT NULL,
+    last_maintenance DATE,
+
+    UNIQUE (station_id, box_number)
 );
 
 -- =========================================================
@@ -156,7 +211,22 @@ CREATE INDEX idx_loans_borrower
 ON loans(borrower_id);
 
 CREATE INDEX idx_locations_geom
-ON locations USING GIST(location)
+ON locations USING GIST(location);
+
+CREATE INDEX idx_localities_country
+ON localities(country_id);
+
+CREATE INDEX idx_localities_name
+ON localities(country_id, name);
+
+CREATE INDEX idx_locations_locality
+ON locations(locality_id);
+
+CREATE INDEX idx_locker_stations_location
+ON locker_stations(location_id);
+
+CREATE INDEX idx_lockers_station
+ON lockers(station_id);
 
 -- =========================================================
 -- UPDATED_AT TRIGGER
@@ -184,4 +254,3 @@ CREATE TRIGGER update_loans_updated_at
 BEFORE UPDATE ON loans
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
-

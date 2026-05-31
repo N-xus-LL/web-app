@@ -1,0 +1,248 @@
+package nexus.dsl
+
+import kotlin.math.*
+
+
+enum class LockerStatus {
+    SELECTED,       // Closest candidate locker
+    MATCHING,       // Lockers which match the criteria
+    UNFITTING,      // Lockers which dimensions are not fitting
+    OUT_OF_RADIUS,  // Lockers which are in locality, but are out of [final] radius
+    UNAVAILABLE,    // Lockers which are occupied or broken
+    UNDEFINED       // Initial locker state
+}
+
+data class Location(
+    val id: String,
+    val lat: Double,
+    val lon: Double,
+    val city: String,
+    val address: String
+)
+
+data class LockerStation(
+    val id: String,
+    val location: Location
+)
+
+data class Locker(
+    val id: String,
+    val station: LockerStation,
+    val boxNumber: Int,
+    val maxWeightKg: Double,
+    val maxLengthCm: Double,
+    val maxWidthCm: Double,
+    val maxHeightCm: Double,
+    val available: Boolean,
+
+    // Mutable fields evaluated dynamically by the interpreter pipeline
+    var distance: Double = 0.0,
+    var status: LockerStatus = LockerStatus.UNDEFINED,
+    var isSelected: Boolean = false
+)
+
+
+data class RuntimeError(
+    override val message: String,
+    val label: String = "[RuntimeError]"
+) : Exception(message)
+
+class Interpreter(
+    private val validatedAst: ValidatedAST,
+    private val lockers: MutableList<Locker>
+) {
+    private val ast = validatedAst.ast
+    private val lender   = ast.configurations["lender"] as LenderBlock
+    private val borrower = ast.configurations["borrower"] as BorrowerBlock
+    private val item     = ast.configurations["item"] as ItemBlock
+    private val search   = ast.configurations["search"] as SearchBlock
+    private var lockersInRadius = mutableListOf<Locker>()
+    private var lockersMatching = mutableListOf<Locker>()
+    private var selectedLocker: Locker? = null
+
+    fun execute(): List<Locker> {
+        // Resolve our geographic tracking midpoint reference based on the Strategy Directive
+        val referencePoint = calculateReferencePoint()
+        findSpatialMatches()
+        findCandidates()
+        findClosest()
+
+        // Process script execution blocks sequentially
+        // The mutable map keeps track of locally bound scope variables (e.g., current loop iteration)
+        val runtimeEnv = mutableMapOf<String, Any>()
+
+        for (statement in ast.executionBody) {
+            executeStatement(statement, runtimeEnv)
+        }
+
+        // Return evaluated collection results back to your service layer
+        return lockers
+    }
+
+    // Statement Execution
+    private fun executeStatement(
+        statement: StatementNode,
+        env: MutableMap<String, Any>
+    ) {
+        when (statement) {
+            is ForEachLockerLoop -> {
+                val iteratorVar = statement.iteratorName // e.g. "locker"
+
+                // Run the script block over every database candidate sequentially
+                for (locker in lockers) {
+                    env[iteratorVar] = locker // Bind current candidate to local scope context
+
+                    for (innerStatement in statement.body) {
+                        executeStatement(innerStatement, env)
+                    }
+                }
+
+                env.remove(iteratorVar) // Clean up scope once loop terminates
+            }
+
+            is IfStatement -> {
+                if (evaluateExpression(statement.condition, env) as Boolean) {
+                    statement.thenBranch.forEach { executeStatement(it, env) }
+                    return
+                }
+
+                for ((condition, branch) in statement.elseIfBranches) {
+                    if (evaluateExpression(condition, env) as Boolean) {
+                        branch.forEach { executeStatement(it, env) }
+                        return
+                    }
+                }
+
+                statement.elseBranch?.forEach { executeStatement(it, env) }
+            }
+
+            is AssignmentStatement -> {
+                val target = statement.target
+                val targetObject = env[target.objectName] ?: return
+
+                if (targetObject is Locker && target.propertyName == "status") {
+                    val incomingValue = statement.value.name.uppercase()
+                    targetObject.status = LockerStatus.valueOf(incomingValue)
+                }
+            }
+
+            is OutputStatement -> {
+                // Handle Directive Formatting Logs based on OutputMode Directive configurations
+                val mode = ast.outputMode?.mode?.lowercase() ?: "silent"
+                if (mode != "silent") {
+                    println("[OUTPUT DIRECTIVE ($mode)] Export targets context state triggered for payload: '${statement.target}'")
+                    if (statement.target == "minimal_route") {
+                        val optimizedMatch = candidates.filter { it.status == LockerStatus.MATCHING }
+                            .minByOrNull { it.distance }
+                        println(" > Best Optimized Target Match Node found: $optimizedMatch")
+                    } else if (statement.target == "all_lockers") {
+                        println(" > All Evaluated Candidate Context Matrix:")
+                        candidates.forEach { println("   - $it") }
+                    }
+                }
+            }
+        }
+    }
+
+    // Expression Evaluation
+    private fun evaluateExpression(
+        expr: ExpressionNode,
+        env: Map<String, Any>
+    ): Any {
+        return when (expr) {
+            is NumberLiteral -> expr.value
+            is IdentifierLiteral -> expr.name
+
+            is PropertyAccess -> {
+                val boundObj = env[expr.objectName] ?: throw RuntimeError("Reference missing for ${expr.objectName}")
+                if (boundObj is Locker) {
+                    when (expr.propertyName) {
+                        "lat"      -> boundObj.station.location.lat
+                        "lon"      -> boundObj.station.location.lon
+                        "distance" -> boundObj.distance
+                        "status"   -> boundObj.status.name.lowercase()
+                        else       -> throw RuntimeError("Unknown property '${expr.propertyName}'")
+                    }
+                } else throw RuntimeError("Target object type is unresolvable")
+            }
+
+            is BinaryExpression -> {
+                val leftVal = evaluateExpression(expr.left, env)
+                val rightVal = evaluateExpression(expr.right, env)
+
+                when (expr.operator) {
+                    BinaryOp.EQUALS -> leftVal == rightVal
+                    BinaryOp.LESS_EQUAL -> {
+                        if (leftVal is Double && rightVal is Double) leftVal <= rightVal
+                        else throw RuntimeError("Operation '<=' cannot be applied to non-numeric types.")
+                    }
+                    BinaryOp.GREATER_EQUAL -> {
+                        if (leftVal is Double && rightVal is Double) leftVal >= rightVal
+                        else throw RuntimeError("Operation '<=' cannot be applied to non-numeric types.")
+                    }
+                }
+            }
+        }
+    }
+
+    // Reference point calculation
+    private fun calculateReferencePoint(): Pair<Double, Double> {
+        val strategyName = ast.strategy?.strategyName?.lowercase() ?: "midpoint"
+        val t = when (strategyName) {
+            "near_lender"   -> 0.75
+            "midpoint"      -> 0.50
+            "near_borrower" -> 0.25
+            "custom"        -> ast.strategy!!.customT ?: 0.5
+            else -> {
+                throw RuntimeError("Unknown strategy '$strategyName' found")
+            }
+        }
+
+        val referenceLat = borrower.lat + t * (lender.lat - borrower.lat)
+        val referenceLon = borrower.lon + t * (lender.lon - borrower.lon)
+
+        return Pair(referenceLat, referenceLon)
+    }
+
+    // Finding lockers which are spatial matches
+    private fun findSpatialMatches() {
+        var currentRadius = search.initialRadius
+
+        while (lockersInRadius.isEmpty()) {
+            lockersInRadius = ...
+            currentRadius += search.radiusDelta
+        }
+    }
+
+    // Finding lockers which are candidates
+    private fun findCandidates() {
+        lockersMatching = lockersInRadius.filter { locker ->
+            locker.maxWeightKg >= item.weight &&
+                    locker.maxLengthCm >= item.length &&
+                    locker.maxWidthCm  >= item.width  &&
+                    locker.maxHeightCm >= item.height
+        } as MutableList<Locker>
+    }
+
+    // Finding closest candidate locker
+    private fun findClosest() {
+        selectedLocker = lockersMatching.filter{ it.available }.minBy{ it.distance }
+        selectedLocker?.isSelected = true
+    }
+
+    // Haversine geospatial calculation
+    private fun haversineDistance(
+        lat1: Double, lon1: Double,
+        lat2: Double, lon2: Double
+    ): Double {
+        val earthRadiusMeters = 6371000.0
+        val deltaLat = Math.toRadians(lat2 - lat1)
+        val deltaLon = Math.toRadians(lon2 - lon1)
+
+        val a = sin(deltaLat / 2).pow(2.0) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(deltaLon / 2).pow(2.0)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return earthRadiusMeters * c
+    }
+}
