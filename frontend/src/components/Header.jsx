@@ -42,6 +42,9 @@ const Header = ({ currentUser, onAuthChange, theme, onThemeToggle }) => {
 
   const closeMenu = () => {
     setMenuOpen(false);
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
   };
 
   return (
@@ -80,7 +83,7 @@ const Header = ({ currentUser, onAuthChange, theme, onThemeToggle }) => {
           <NavLink className="nav-link" to="/loans" onClick={closeMenu}>
             Loans
           </NavLink>
-          <NavLink className="nav-link" to="/users" onClick={closeMenu}>
+          <NavLink className="nav-link" to="/users" end onClick={closeMenu}>
             Users
           </NavLink>
 
