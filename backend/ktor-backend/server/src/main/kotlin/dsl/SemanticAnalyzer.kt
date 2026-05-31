@@ -33,6 +33,9 @@ class SemanticAnalyzer(
     private val allowedOutputs = setOf(
         "handoff_plan", "all_lockers"
     )
+    private val allowedOutputModes = setOf(
+        "app", "debug"
+    )
 
     fun analyze(): ValidatedAST {
         // Inputs validation
@@ -40,6 +43,7 @@ class SemanticAnalyzer(
         validateItem()
         validateSearch()
         validateStrategy()
+        validateOutputMode()
 
         // Statements validation
         val activeScopes = mutableSetOf<String>()
@@ -122,6 +126,16 @@ class SemanticAnalyzer(
                     throw SemanticError("Unknown strategy identifier '${ast.strategy.strategyName}'.")
                 }
             }
+        }
+    }
+
+    private fun validateOutputMode() {
+        val mode = ast.outputMode?.mode?.lowercase() ?: return
+
+        if (mode !in allowedOutputModes) {
+            throw SemanticError(
+                "Invalid output mode '$mode'. Expected values: $allowedOutputModes"
+            )
         }
     }
 

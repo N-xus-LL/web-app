@@ -56,13 +56,13 @@ class Interpreter(
     private val borrower = ast.configurations["borrower"] as BorrowerBlock
     private val item     = ast.configurations["item"] as ItemBlock
     private val search   = ast.configurations["search"] as SearchBlock
+    private val referencePoint = calculateReferencePoint()
     private var lockersInRadius = mutableListOf<Locker>()
     private var lockersMatching = mutableListOf<Locker>()
     private var selectedLocker: Locker? = null
 
     fun execute(): List<Locker> {
-        // Resolve our geographic tracking midpoint reference based on the Strategy Directive
-        val referencePoint = calculateReferencePoint()
+        // Resolve locker distances from the class-level reference point.
         findSpatialMatches()
         findCandidates()
         findClosest()
@@ -74,6 +74,8 @@ class Interpreter(
         for (statement in ast.executionBody) {
             executeStatement(statement, runtimeEnv)
         }
+
+        markSelectedLocker()
 
         // Return evaluated collection results back to your service layer
         return lockers
@@ -128,16 +130,22 @@ class Interpreter(
 
             is OutputStatement -> {
                 // Handle Directive Formatting Logs based on OutputMode Directive configurations
-                val mode = ast.outputMode?.mode?.lowercase() ?: "silent"
-                if (mode != "silent") {
+                val mode = ast.outputMode?.mode?.lowercase() ?: "app"
+                if (mode == "debug") {
                     println("[OUTPUT DIRECTIVE ($mode)] Export targets context state triggered for payload: '${statement.target}'")
                     if (statement.target == "minimal_route") {
-                        val optimizedMatch = candidates.filter { it.status == LockerStatus.MATCHING }
-                            .minByOrNull { it.distance }
+                        val optimizedMatch = selectedLocker ?: lockersMatching.minByOrNull { it.distance }
                         println(" > Best Optimized Target Match Node found: $optimizedMatch")
+                    } else if (statement.target == "handoff_plan") {
+                        println(" > Selected locker: ${selectedLocker ?: "none"}")
+                        println(" > Matching alternatives:")
+                        lockersMatching
+                            .filter { it != selectedLocker }
+                            .sortedBy { it.distance }
+                            .forEach { println("   - $it") }
                     } else if (statement.target == "all_lockers") {
                         println(" > All Evaluated Candidate Context Matrix:")
-                        candidates.forEach { println("   - $it") }
+                        lockers.sortedBy { it.distance }.forEach { println("   - $it") }
                     }
                 }
             }
@@ -206,28 +214,74 @@ class Interpreter(
 
     // Finding lockers which are spatial matches
     private fun findSpatialMatches() {
+        if (lockers.isEmpty()) {
+            throw RuntimeError("No lockers were provided to the interpreter.")
+        }
+
+        lockers.forEach { locker ->
+            locker.distance = haversineDistance(
+                referencePoint.first,
+                referencePoint.second,
+                locker.station.location.lat,
+                locker.station.location.lon
+            )
+            locker.status = LockerStatus.UNDEFINED
+            locker.isSelected = false
+        }
+
         var currentRadius = search.initialRadius
+        val farthestLockerDistance = lockers.maxOf { it.distance }
 
         while (lockersInRadius.isEmpty()) {
-            lockersInRadius = ...
+            lockersInRadius = lockers
+                .filter { it.distance <= currentRadius }
+                .toMutableList()
+
+            if (lockersInRadius.isNotEmpty()) {
+                break
+            }
+
+            if (currentRadius > farthestLockerDistance + search.radiusDelta) {
+                throw RuntimeError("No lockers found in the configured search radius expansion.")
+            }
+
             currentRadius += search.radiusDelta
         }
+
+        lockers
+            .filter { it !in lockersInRadius }
+            .forEach { it.status = LockerStatus.OUT_OF_RADIUS }
     }
 
     // Finding lockers which are candidates
     private fun findCandidates() {
         lockersMatching = lockersInRadius.filter { locker ->
-            locker.maxWeightKg >= item.weight &&
+            val dimensionsFit = locker.maxWeightKg >= item.weight &&
                     locker.maxLengthCm >= item.length &&
-                    locker.maxWidthCm  >= item.width  &&
+                    locker.maxWidthCm >= item.width &&
                     locker.maxHeightCm >= item.height
-        } as MutableList<Locker>
+
+            locker.status = when {
+                !locker.available -> LockerStatus.UNAVAILABLE
+                dimensionsFit -> LockerStatus.MATCHING
+                else -> LockerStatus.UNFITTING
+            }
+
+            locker.available && dimensionsFit
+        }.toMutableList()
     }
 
     // Finding closest candidate locker
     private fun findClosest() {
-        selectedLocker = lockersMatching.filter{ it.available }.minBy{ it.distance }
-        selectedLocker?.isSelected = true
+        selectedLocker = lockersMatching.minByOrNull { it.distance }
+        markSelectedLocker()
+    }
+
+    private fun markSelectedLocker() {
+        selectedLocker?.let {
+            it.isSelected = true
+            it.status = LockerStatus.SELECTED
+        }
     }
 
     // Haversine geospatial calculation
