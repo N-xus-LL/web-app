@@ -66,9 +66,39 @@ const getCurrentPosition = () =>
     );
   });
 
+const watchPosition = (onSuccess, onError) => {
+  if (!navigator.geolocation) {
+    onError(new Error("Geolocation is not supported in this browser."));
+    return null;
+  }
+
+  return navigator.geolocation.watchPosition(
+    (position) => {
+      onSuccess({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      });
+    },
+    (error) => {
+      const messageByCode = {
+        1: "Location permission denied. Allow location access in your browser.",
+        2: "Your location could not be determined.",
+        3: "Location request timed out. Try again."
+      };
+      onError(new Error(messageByCode[error.code] || "Could not get your current location."));
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+};
+
 const geocodingService = {
   geocodeAddress,
-  getCurrentPosition
+  getCurrentPosition,
+  watchPosition
 };
 
 export default geocodingService;

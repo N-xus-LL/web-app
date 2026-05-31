@@ -2,12 +2,12 @@ import React, { useRef, useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, LayerGroup, Circle } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import itemService from "../services/itemService";
-import ItemCard from "../components/ItemCard";
+import itemService, { ITEM_DATA_CHANGED_EVENT } from "../services/itemService";
 import locationService from "../services/locationService";
-import L from 'leaflet';
 import geocodingService from "../services/geocodingService";
 import { createCircleIcon, createPinIcon } from "../utils/createMapIcons";
+
+const getItemLocation = (item) => item.current_location || item.currentLocation || null;
 
 const MapPage = () => {
   const mapRef = useRef(null);
@@ -18,28 +18,73 @@ const MapPage = () => {
   const [error, setError] = useState("");
   const [currentPosition, setCurrentPosition] = useState([0, 0]);
 
-  var {state} = useLocation();
+  const { state } = useLocation();
 
-  const loadItems = async () => {
-    setLoading(true);
+  const loadItems = async ({ silent = false } = {}) => {
+    if (!silent) {
+      setLoading(true);
+    }
     setError("");
 
     try {
-        const response = await itemService.getItems();
-        setItems(Array.isArray(response) ? response : []);
+      const response = state?.circle
+        ? await itemService.getNearbyItems({
+            lat: state.circle.lat,
+            lon: state.circle.lon,
+            radius: state.circle.radius
+          })
+        : await itemService.getItems();
+
+      setItems(Array.isArray(response) ? response : []);
     } catch (requestError) {
-        setError(requestError.message || "Failed to load items");
+      setError(requestError.message || "Failed to load items");
     } finally {
+      if (!silent) {
         setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-      if (!state?.items) {
-        loadItems();
-      } else {
-        setItems(state.items);
+    if (state?.items) {
+      setItems(state.items);
+      setLoading(false);
+    }
+
+    loadItems({ silent: Boolean(state?.items) });
+  }, [state]);
+
+  useEffect(() => {
+    const refreshItems = () => {
+      loadItems({ silent: true });
+    };
+
+    const refreshOnStorage = (event) => {
+      if (event.key === "lendloop_item_data_changed_at") {
+        refreshItems();
       }
+    };
+
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refreshItems();
+      }
+    };
+
+    window.addEventListener(ITEM_DATA_CHANGED_EVENT, refreshItems);
+    window.addEventListener("storage", refreshOnStorage);
+    window.addEventListener("focus", refreshItems);
+    document.addEventListener("visibilitychange", refreshOnVisibility);
+
+    const intervalId = window.setInterval(refreshItems, 5000);
+
+    return () => {
+      window.removeEventListener(ITEM_DATA_CHANGED_EVENT, refreshItems);
+      window.removeEventListener("storage", refreshOnStorage);
+      window.removeEventListener("focus", refreshItems);
+      document.removeEventListener("visibilitychange", refreshOnVisibility);
+      window.clearInterval(intervalId);
+    };
   }, [state]);
 
 
@@ -61,21 +106,21 @@ const MapPage = () => {
     loadLocations();
   }, []);
 
-  const getCurrentLocation = async () => {
-      try {
-          const position = await geocodingService.getCurrentPosition();
-          setCurrentPosition([position.latitude, position.longitude]);
-      } catch (requestError) {
-          setError(requestError.message || "Could not get your current location.");
-      }
-  }
   useEffect(() => {
-      getCurrentLocation();
-      const interval = setInterval(() => {
-          getCurrentLocation();
-      }, 10000);
+      const watchId = geocodingService.watchPosition(
+          (position) => {
+              setCurrentPosition([position.latitude, position.longitude]);
+          },
+          (requestError) => {
+              setError(requestError.message || "Could not get your current location.");
+          }
+      );
 
-      return () => clearInterval(interval);
+      return () => {
+          if (watchId !== null) {
+              navigator.geolocation.clearWatch(watchId);
+          }
+      };
   }, []);
 
     const blue = "#4C9CD1";
@@ -110,17 +155,30 @@ const MapPage = () => {
                 <LayersControl.Overlay checked name="Items">
                     <LayerGroup>
                     {!loading && items.length > 0 &&
-                        items.map((item) => (
-                            <Marker position={[item.current_location.latitude, item.current_location.longitude]} icon={icons.bluePinIcon} title={item.name}>
-                                <Popup>
-                                    <Link to={`/items/${item.id}`}>
-                                         {item.name}
-                                    </Link>
-                                    <br />
-                                    {item.description}
-                               </Popup>
-                            </Marker>
-                    ))}
+                        items.map((item) => {
+                            const itemLocation = getItemLocation(item);
+
+                            if (itemLocation?.latitude == null || itemLocation?.longitude == null) {
+                                return null;
+                            }
+
+                            return (
+                                <Marker
+                                    key={item.id}
+                                    position={[itemLocation.latitude, itemLocation.longitude]}
+                                    icon={icons.bluePinIcon}
+                                    title={item.name}
+                                >
+                                    <Popup>
+                                        <Link to={`/items/${item.id}`}>
+                                             {item.name}
+                                        </Link>
+                                        <br />
+                                        {item.description}
+                                   </Popup>
+                                </Marker>
+                            );
+                    })}
                     </LayerGroup>
                 </LayersControl.Overlay>
 
@@ -128,7 +186,7 @@ const MapPage = () => {
                     <LayerGroup>
                       {!loading && locations.length > 0 &&
                            locations.map((location) => (
-                               <Marker position={[location.location.latitude, location.location.longitude]} icon={icons.greenCircleIcon} title={location.name}>
+                               <Marker key={location.id || location.name} position={[location.location.latitude, location.location.longitude]} icon={icons.greenCircleIcon} title={location.name}>
                                   <Popup>
                                      {location.name}
                                      <br />
@@ -196,7 +254,7 @@ const MapPage = () => {
           </div>
 
           {state?.circle && (
-              <Circle center={[state?.circle.lat, state?.circle.lon]} radius={state?.circle.radius} dashArray={[10, 10]} color={blue} />
+              <Circle center={[Number(state?.circle.lat), Number(state?.circle.lon)]} radius={Number(state?.circle.radius)} dashArray={[10, 10]} color={blue} />
           )}
       </MapContainer>
       </div>

@@ -10,8 +10,14 @@ const UserItems = ({ currentUser }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [saving, setSaving] = useState("");
   const [usernameById, setUsernameById] = useState({});
+
+  const clearStatus = () => {
+    setError("");
+    setMessage("");
+  };
 
   const loadUserItems = async () => {
     setLoading(true);
@@ -49,7 +55,7 @@ const UserItems = ({ currentUser }) => {
     try {
       await itemService.deleteItem(item.id);
       setMessage("Item deleted.");
-      await loadItems();
+      await loadUserItems();
     } catch (requestError) {
       setError(requestError.message || "Failed to delete item");
     } finally {
@@ -81,6 +87,9 @@ const UserItems = ({ currentUser }) => {
           Create item
         </Link>
       </div>
+
+      {error && <div className="alert alert-error">{error}</div>}
+      {message && <div className="alert alert-success">{message}</div>}
 
       <div className="items-summary-row">
         <span>{items.length} items</span>

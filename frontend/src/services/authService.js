@@ -29,11 +29,17 @@ const parseResponse = async (response) => {
 
 const request = async (path, options = {}) => {
   const currentUser = getCurrentUser();
+  const isGet = !options.method || options.method.toUpperCase() === "GET";
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
       ...(currentUser?.token ? { Authorization: `Bearer ${currentUser.token}` } : {}),
+      ...(isGet ? {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      } : {}),
       ...options.headers
     }
   });
