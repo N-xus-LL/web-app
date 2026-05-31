@@ -1,23 +1,72 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import itemService from "../services/itemService";
+import userService from "../services/userService";
+
+const getItemDate = (item) => item.created_at || item.createdAt || item.updated_at || item.updatedAt || "";
+
+const formatValue = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "Value not set";
+  }
+
+  return `${value} EUR`;
+};
 
 const Home = ({ currentUser }) => {
+  const [items, setItems] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        const [itemsResponse, usersResponse] = await Promise.all([
+          itemService.getItems(),
+          userService.getUsers()
+        ]);
+
+        setItems(Array.isArray(itemsResponse) ? itemsResponse : []);
+        setUsers(Array.isArray(usersResponse) ? usersResponse : []);
+      } catch {
+        setItems([]);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHomeData();
+  }, []);
+
+  const newestItems = useMemo(() => {
+    return [...items]
+      .sort((first, second) => new Date(getItemDate(second)) - new Date(getItemDate(first)))
+      .slice(0, 3);
+  }, [items]);
+
+  const availableCount = items.filter((item) => item.available).length;
+  const totalValue = items.reduce((sum, item) => {
+    const value = Number(item.estimated_value ?? item.estimatedValue ?? 0);
+    return Number.isFinite(value) ? sum + value : sum;
+  }, 0);
+
   return (
     <section className="page-section hero">
       <div>
         <p className="eyebrow">Community rentals</p>
         <h1>LendLoop</h1>
         <p className="hero-copy">
-          Discover items you need from people around you. From tools and bikes to electronics —
-          borrow what you need, when you need it, without buying.        </p>
+          Borrow useful things from people nearby, and lend the items you are not using. A practical shared marketplace for everyday equipment, tools, electronics, and gear.
+        </p>
 
         {currentUser ? (
           <div className="hero-actions">
             <Link className="primary-button" to="/items">
-              Manage items
+              Browse items
             </Link>
-            <Link className="secondary-button" to="/statistics">
-              View statistics
+            <Link className="secondary-button" to="/items/new">
+              Add item
             </Link>
           </div>
         ) : (
@@ -33,41 +82,65 @@ const Home = ({ currentUser }) => {
 
         <div className="stats-strip">
           <div className="stat">
-            <strong>Secure and decentralized</strong>
-            <span>JWT authentication...add later</span>
+            <strong>{loading ? "-" : availableCount}</strong>
+            <span>available items</span>
           </div>
           <div className="stat">
-            <strong>Find what you need</strong>
-            <span>Browse available items in your area and request a loan in seconds.</span>
+            <strong>{loading ? "-" : users.length}</strong>
+            <span>community members</span>
           </div>
           <div className="stat">
-            <strong>Lend unused items</strong>
-            <span>Turn unused tools, gadgets or equipment into value by sharing them with others.</span>
+            <strong>{loading ? "-" : `${totalValue.toFixed(0)} EUR`}</strong>
+            <span>listed item value</span>
           </div>
         </div>
       </div>
 
       <div className="feature-board">
-        <article className="feature-card">
-          <h2>Item nearby</h2>
-          <p>
-            Lorem Ipsum is a placeholder text used in the printing and typesetting industry since the 1500s. It is deralorum," and has been popularized in graphic design and web development to demonstrate layout without distracting content. 
-          </p>
+        <article className="feature-card latest-items-card">
+          <div className="panel-heading">
+            <h2>Newest items</h2>
+            <Link className="link-button" to="/items">
+              View all
+            </Link>
+          </div>
+
+          {loading && <p>Loading latest listings...</p>}
+
+          {!loading && newestItems.length === 0 && (
+            <p>No items listed yet. Add the first item and it will show here.</p>
+          )}
+
+          {!loading && newestItems.length > 0 && (
+            <div className="latest-items-list">
+              {newestItems.map((item) => (
+                <Link className="latest-item-row" key={item.id} to={`/items/${item.id}`}>
+                  <div className="latest-item-thumb">
+                    {item.images?.[0] ? (
+                      <img alt={item.name} src={item.images[0]} />
+                    ) : (
+                      <span>{item.name?.slice(0, 1) || "I"}</span>
+                    )}
+                  </div>
+                  <div>
+                    <strong>{item.name}</strong>
+                    <span>{formatValue(item.estimated_value ?? item.estimatedValue)}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </article>
-        {currentUser && (
-          <article className="profile-card">
-            <h2>Current stats</h2>
-            <p>Trust policies.</p>
-            <div className="profile-line">
-              <span>Reputation:</span>
-              {/* <strong>{currentUser.user?.username}</strong> */}
-            </div>
-            <div className="profile-line">
-              <span>User ID</span>
-              <strong>{currentUser.user?.id}</strong>
-            </div>
-          </article>
-        )}
+
+        <article className="feature-card home-note-card">
+          <h3>Ready to share?</h3>
+          <p>
+            Add photos, condition, value, and location so borrowers can quickly decide whether your item fits what they need.
+          </p>
+          <Link className="secondary-button small-button" to={currentUser ? "/items/new" : "/login"}>
+            {currentUser ? "List an item" : "Login to list"}
+          </Link>
+        </article>
       </div>
     </section>
   );

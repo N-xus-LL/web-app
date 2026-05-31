@@ -404,6 +404,70 @@ button {
   line-height: 1.6;
 }
 
+.latest-items-card {
+  gap: 14px;
+}
+
+.latest-items-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.latest-item-row {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--bg-surface-muted);
+}
+
+.latest-item-row strong,
+.latest-item-row span {
+  display: block;
+}
+
+.latest-item-row strong {
+  overflow: hidden;
+  color: var(--text-heading);
+  font-size: 0.98rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latest-item-row span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.latest-item-thumb {
+  display: grid;
+  width: 58px;
+  height: 48px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-weight: 900;
+}
+
+.latest-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-note-card {
+  display: grid;
+  gap: 12px;
+}
+
 .auth-page {
   display: grid;
   width: min(980px, calc(100% - 32px));
