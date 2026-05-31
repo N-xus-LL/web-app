@@ -1,6 +1,7 @@
 package nexus.dsl
 
 import kotlin.math.*
+import kotlinx.serialization.json.JsonObject
 
 
 enum class LockerStatus {
@@ -60,8 +61,13 @@ class Interpreter(
     private var lockersInRadius = mutableListOf<Locker>()
     private var lockersMatching = mutableListOf<Locker>()
     private var selectedLocker: Locker? = null
+    private var executed = false
 
     fun execute(): List<Locker> {
+        lockersInRadius = mutableListOf()
+        lockersMatching = mutableListOf()
+        selectedLocker = null
+
         // Resolve locker distances from the class-level reference point.
         findSpatialMatches()
         findCandidates()
@@ -76,9 +82,23 @@ class Interpreter(
         }
 
         markSelectedLocker()
+        executed = true
 
         // Return evaluated collection results back to your service layer
         return lockers
+    }
+
+    fun exportGeoJson(): JsonObject {
+        if (!executed) {
+            execute()
+        }
+
+        val mode = ast.outputMode?.mode?.lowercase() ?: "app"
+
+        return when (mode) {
+            "debug" -> GeoJsonExporter.exportDebug(lender, borrower, referencePoint, lockers)
+            else -> GeoJsonExporter.exportApp(lender, borrower, referencePoint, lockers)
+        }
     }
 
     // Statement Execution
@@ -159,9 +179,19 @@ class Interpreter(
     ): Any {
         return when (expr) {
             is NumberLiteral -> expr.value
-            is IdentifierLiteral -> expr.name
+            is IdentifierLiteral -> {
+                if (expr.name == "outputMode") ast.outputMode?.mode?.lowercase() ?: "app"
+                else expr.name
+            }
 
             is PropertyAccess -> {
+                if (expr.objectName == "search") {
+                    return when (expr.propertyName) {
+                        "final_radius" -> search.finalRadius
+                        else -> throw RuntimeError("Unknown property '${expr.objectName}.${expr.propertyName}'")
+                    }
+                }
+
                 val boundObj = env[expr.objectName] ?: throw RuntimeError("Reference missing for ${expr.objectName}")
                 if (boundObj is Locker) {
                     when (expr.propertyName) {
@@ -169,6 +199,9 @@ class Interpreter(
                         "lon"      -> boundObj.station.location.lon
                         "distance" -> boundObj.distance
                         "status"   -> boundObj.status.name.lowercase()
+                        "is_selected" -> boundObj.isSelected
+                        "available" -> boundObj.available
+                        "fits_item" -> lockerFitsItem(boundObj)
                         else       -> throw RuntimeError("Unknown property '${expr.propertyName}'")
                     }
                 } else throw RuntimeError("Target object type is unresolvable")
@@ -247,6 +280,7 @@ class Interpreter(
 
             currentRadius += search.radiusDelta
         }
+        search.finalRadius = currentRadius
 
         lockers
             .filter { it !in lockersInRadius }
@@ -256,10 +290,7 @@ class Interpreter(
     // Finding lockers which are candidates
     private fun findCandidates() {
         lockersMatching = lockersInRadius.filter { locker ->
-            val dimensionsFit = locker.maxWeightKg >= item.weight &&
-                    locker.maxLengthCm >= item.length &&
-                    locker.maxWidthCm >= item.width &&
-                    locker.maxHeightCm >= item.height
+            val dimensionsFit = lockerFitsItem(locker)
 
             locker.status = when {
                 !locker.available -> LockerStatus.UNAVAILABLE
@@ -282,6 +313,13 @@ class Interpreter(
             it.isSelected = true
             it.status = LockerStatus.SELECTED
         }
+    }
+
+    private fun lockerFitsItem(locker: Locker): Boolean {
+        return locker.maxWeightKg >= item.weight &&
+                locker.maxLengthCm >= item.length &&
+                locker.maxWidthCm >= item.width &&
+                locker.maxHeightCm >= item.height
     }
 
     // Haversine geospatial calculation

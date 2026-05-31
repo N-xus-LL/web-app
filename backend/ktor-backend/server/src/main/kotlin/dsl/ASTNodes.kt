@@ -34,7 +34,8 @@ data class ItemBlock(
 
 data class SearchBlock(
     val initialRadius: Double, // m
-    val radiusDelta:   Double  // m
+    val radiusDelta:   Double, // m
+    var finalRadius:   Double = initialRadius
 ) : ConfigurationBlock
 
 

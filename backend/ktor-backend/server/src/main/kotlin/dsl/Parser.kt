@@ -111,10 +111,20 @@ class Parser(
         // Optimized to camelCase: maps perfectly to SearchBlock properties without string mutations!
         val searchSchema = mapOf(
             "initialRadius" to TokenType.NUMBER,
-            "radiusDelta"   to TokenType.NUMBER
+            "radiusDelta"   to TokenType.NUMBER,
+            "initial_radius" to TokenType.NUMBER,
+            "delta" to TokenType.NUMBER
         )
 
-        val fields = parseBlockFields("search", searchSchema)
+        val fields = parseBlockFields(
+            blockName = "search",
+            schema = searchSchema,
+            requiredFields = setOf("initialRadius", "radiusDelta"),
+            aliases = mapOf(
+                "initial_radius" to "initialRadius",
+                "delta" to "radiusDelta"
+            )
+        )
 
         return SearchBlock(
             initialRadius = (fields["initialRadius"] as Value.Number).value,
@@ -262,7 +272,7 @@ class Parser(
         val token = peek()
         return when (token.type) {
             TokenType.NUMBER -> NumberLiteral(advance().lexeme.toDouble())
-            TokenType.IDENTIFIER -> {
+            TokenType.IDENTIFIER, TokenType.OUTPUT_MODE, TokenType.SEARCH -> {
                 val name = advance().lexeme
                 if (peek().type == TokenType.DOT) {
                     consume(TokenType.DOT)
@@ -312,18 +322,21 @@ class Parser(
      */
     private fun parseBlockFields(
         blockName: String,
-        schema: Map<String, TokenType>
+        schema: Map<String, TokenType>,
+        requiredFields: Set<String> = schema.keys,
+        aliases: Map<String, String> = emptyMap()
     ): Map<String, Value> {
         consume(TokenType.LBRACE)
         val parsedFields = mutableMapOf<String, Value>()
 
         while (peek().type != TokenType.RBRACE && !isAtEOF()) {
-            val fieldLabel = consume(TokenType.IDENTIFIER).lexeme
+            val rawFieldLabel = consume(TokenType.IDENTIFIER).lexeme
+            val fieldLabel = aliases[rawFieldLabel] ?: rawFieldLabel
             consume(TokenType.COLON)
 
             // Structural Check: Verify the property identifier exists in the schema map
-            val expectedType = schema[fieldLabel] ?: throw SyntaxError(
-                "Unknown property '$fieldLabel' in $blockName block @ ${peek().line}:${peek().column}"
+            val expectedType = schema[rawFieldLabel] ?: throw SyntaxError(
+                "Unknown property '$rawFieldLabel' in $blockName block @ ${peek().line}:${peek().column}"
             )
             if (parsedFields.containsKey(fieldLabel)) {
                 throw SyntaxError(
@@ -352,7 +365,7 @@ class Parser(
         consume(TokenType.RBRACE)
 
         // Schema Completeness Check: Ensure all required fields were declared by the user
-        for (requiredField in schema.keys) {
+        for (requiredField in requiredFields) {
             if (!parsedFields.containsKey(requiredField)) {
                 throw SyntaxError(
                     "Missing required property '$requiredField' in $blockName block configuration."

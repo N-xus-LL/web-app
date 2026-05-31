@@ -11,7 +11,10 @@ class SemanticAnalyzer(
     val warnings = mutableListOf<String>()
 
     private val allowedLockerProperties = setOf(
-        "lat", "lon", "distance", "status"
+        "lat", "lon", "distance", "status", "is_selected", "available", "fits_item"
+    )
+    private val allowedSearchProperties = setOf(
+        "final_radius"
     )
     private val allowedMutableProperties = setOf(
         "status"
@@ -22,6 +25,9 @@ class SemanticAnalyzer(
     private val stringLockerProperties = setOf(
         "status"
     )
+    private val booleanLockerProperties = setOf(
+        "is_selected", "available", "fits_item"
+    )
     private val allowedStatusValues = setOf(
         "selected",
         "matching",
@@ -31,7 +37,7 @@ class SemanticAnalyzer(
         "undefined"
     )
     private val allowedOutputs = setOf(
-        "handoff_plan", "all_lockers"
+        "minimal_route", "handoff_plan", "all_lockers"
     )
     private val allowedOutputModes = setOf(
         "app", "debug"
@@ -234,6 +240,16 @@ class SemanticAnalyzer(
                 }
             }
             is PropertyAccess -> {
+                if (expression.objectName == "search") {
+                    if (expression.propertyName !in allowedSearchProperties) {
+                        throw SemanticError(
+                            "Unknown attribute reference: '${expression.objectName}.${expression.propertyName}'. " +
+                                    "Allowed search properties: $allowedSearchProperties"
+                        )
+                    }
+                    return
+                }
+
                 // Scope Check
                 if (!activeScopes.contains(expression.objectName)) {
                     throw SemanticError(
@@ -259,9 +275,11 @@ class SemanticAnalyzer(
             is IdentifierLiteral -> ExpressionType.STRING
             is PropertyAccess -> {
                 validateExpression(expression, activeScopes)
-                when (expression.propertyName) {
-                    in numericLockerProperties -> ExpressionType.NUMBER
-                    in stringLockerProperties -> ExpressionType.STRING
+                when {
+                    expression.objectName == "search" && expression.propertyName in allowedSearchProperties -> ExpressionType.NUMBER
+                    expression.propertyName in numericLockerProperties -> ExpressionType.NUMBER
+                    expression.propertyName in stringLockerProperties -> ExpressionType.STRING
+                    expression.propertyName in booleanLockerProperties -> ExpressionType.BOOLEAN
                     else -> throw SemanticError(
                         "Unknown attribute reference: '${expression.objectName}.${expression.propertyName}'. " +
                                 "Allowed locker properties: $allowedLockerProperties"
