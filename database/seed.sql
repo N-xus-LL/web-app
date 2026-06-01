@@ -116,6 +116,62 @@ INSERT INTO items (
           299.50,
           true,
           '{"category":"sports","type":"bike"}'::jsonb
+      ),
+      (
+          'cccccccc-cccc-cccc-cccc-cccccccccccc',
+          '11111111-1111-1111-1111-111111111111',
+          NULL,
+          'fair',
+          'full_responsibility',
+          'Camping Tent',
+          '4-person waterproof camping tent',
+          ARRAY['https://example.com/tent1.jpg'],
+          ST_SetSRID(ST_MakePoint(13.7290, 45.5469), 4326),
+          120.00,
+          true,
+          '{"category":"outdoors","season":"summer"}'::jsonb
+      ),
+      (
+          'dddddddd-dddd-dddd-dddd-dddddddddddd',
+          '11111111-1111-1111-1111-111111111111',
+          NULL,
+          'good',
+          'trust_based',
+          'Electric Guitar',
+          'Fender-style electric guitar with amp support',
+          ARRAY['https://example.com/guitar1.jpg'],
+          ST_SetSRID(ST_MakePoint(16.3619, 48.2082), 4326),
+          300.00,
+          true,
+          '{"category":"music","instrument":"guitar"}'::jsonb
+      ),
+      (
+          'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+          '11111111-1111-1111-1111-111111111111',
+          NULL,
+          'good',
+          'full_responsibility',
+          'Gaming Laptop',
+          'High performance laptop for gaming and development',
+          ARRAY['https://example.com/laptop1.jpg'],
+          ST_SetSRID(ST_MakePoint(14.4378, 50.0755), 4326),
+          1200.00,
+          true,
+          '{"category":"electronics","gpu":"RTX"}'::jsonb
+      ),
+      (
+          'ffffffff-ffff-ffff-ffff-ffffffffffff',
+          '11111111-1111-1111-1111-111111111111',
+          NULL,
+          'damaged',
+          'trust_based',
+          'Road Bicycle',
+          'Lightweight road bike for city commuting',
+          ARRAY['https://example.com/roadbike.jpg'],
+          ST_SetSRID(ST_MakePoint(15.9819, 46.8011), 4326),
+          600.00,
+          true,
+          '{"category":"sports","type":"road-bike"}'::jsonb
       );
 
 INSERT INTO locations (
