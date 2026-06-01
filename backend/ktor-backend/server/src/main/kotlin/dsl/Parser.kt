@@ -110,10 +110,8 @@ class Parser(
 
         // Optimized to camelCase: maps perfectly to SearchBlock properties without string mutations!
         val searchSchema = mapOf(
-            "initialRadius" to TokenType.NUMBER,
-            "radiusDelta"   to TokenType.NUMBER,
             "initial_radius" to TokenType.NUMBER,
-            "delta" to TokenType.NUMBER
+            "radius_delta"   to TokenType.NUMBER
         )
 
         val fields = parseBlockFields(
@@ -122,7 +120,7 @@ class Parser(
             requiredFields = setOf("initialRadius", "radiusDelta"),
             aliases = mapOf(
                 "initial_radius" to "initialRadius",
-                "delta" to "radiusDelta"
+                "radius_delta"   to "radiusDelta"
             )
         )
 
@@ -183,8 +181,15 @@ class Parser(
         val elseIfBranches = mutableListOf<Pair<ExpressionNode, List<StatementNode>>>()
         var elseBranch: List<StatementNode>? = null
 
-        while (match(TokenType.ELSE)) {
-            if (match(TokenType.IF)) {
+        while (match(TokenType.ELIF) || match(TokenType.ELSE)) {
+            if (match(TokenType.LPAREN)) {
+                val elseIfCond = parseExpression()
+                consume(TokenType.RPAREN)
+                consume(TokenType.LBRACE)
+                val elseIfBlock = parseBlock()
+                consume(TokenType.RBRACE)
+                elseIfBranches.add(Pair(elseIfCond, elseIfBlock))
+            } else if (match(TokenType.IF)) {
                 consume(TokenType.LPAREN)
                 val elseIfCond = parseExpression()
                 consume(TokenType.RPAREN)

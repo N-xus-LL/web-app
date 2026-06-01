@@ -13,6 +13,7 @@ enum class TokenType {
 
     // Control Flow Keywords
     IF,
+    ELIF,
     ELSE,
     FOREACH,
 

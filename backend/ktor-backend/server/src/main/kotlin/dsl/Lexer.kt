@@ -129,16 +129,17 @@ class Lexer(
 
     // Keywords lookup map - lowercase keys for case-insensitivity
     private val keywords = mapOf(
-        "lender"     to TokenType.LENDER,
-        "borrower"   to TokenType.BORROWER,
-        "item"       to TokenType.ITEM,
-        "strategy"   to TokenType.STRATEGY,
-        "search"     to TokenType.SEARCH,
-        "outputmode" to TokenType.OUTPUT_MODE,
-        "if"         to TokenType.IF,
-        "else"       to TokenType.ELSE,
-        "foreach"    to TokenType.FOREACH,
-        "output"     to TokenType.OUTPUT
+        "lender"      to TokenType.LENDER,
+        "borrower"    to TokenType.BORROWER,
+        "item"        to TokenType.ITEM,
+        "strategy"    to TokenType.STRATEGY,
+        "search"      to TokenType.SEARCH,
+        "output_mode" to TokenType.OUTPUT_MODE,
+        "if"          to TokenType.IF,
+        "elif"        to TokenType.ELIF,
+        "else"        to TokenType.ELSE,
+        "foreach"     to TokenType.FOREACH,
+        "output"      to TokenType.OUTPUT
     )
 
     // Token types of single character lexemes
