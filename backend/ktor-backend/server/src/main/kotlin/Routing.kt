@@ -5,6 +5,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.resources.*
 import nexus.repository.UserRepository
+import nexus.routes.dslRoutes
 import nexus.routes.itemRoutes
 import nexus.routes.locationRoutes
 import nexus.routes.userRoutes
@@ -16,6 +17,7 @@ fun Application.configureRouting() {
     routing {
         locationRoutes()
         itemRoutes()
+        dslRoutes()
         userRoutes(userRepository)
         loanRoutes()
 

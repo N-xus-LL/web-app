@@ -10,10 +10,6 @@ application {
     mainClass = "io.ktor.server.netty.EngineMain"
 }
 
-kotlin {
-    jvmToolchain(21)
-}
-
 val ktorVersion = "3.4.3"
 val exposedVersion = "1.2.0"
 val postgresVersion = "18.3"
@@ -30,10 +26,10 @@ dependencies {
     implementation(ktorLibs.server.resources)
     implementation(libs.h2database.h2)
     implementation(libs.kotlinx.rpc.server)
-    implementation(libs.logback.classic)
     implementation(libs.postgresql)
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
+    implementation("org.slf4j:slf4j-nop:2.0.18") // Overrides 'SLF4J(W): No SLF4J providers were found.' exception
     implementation("org.jetbrains.exposed:exposed-json:1.2.0")
     implementation("org.jetbrains.exposed:exposed-java-time:1.2.0")
     implementation("org.jetbrains.exposed:exposed-jdbc:1.2.0")
