@@ -328,4 +328,38 @@ class ItemRepository() {
             }
         }
     }
+
+    fun getUserItems(id: UUID): List<ItemEntity> = transaction {
+        val query = """
+            SELECT 
+                id,
+                owner_id,
+                category_id,
+                condition_id,
+                default_damage_policy_id,
+                name,
+                description,
+                images,
+                ST_X(current_location) AS lon,
+                ST_Y(current_location) AS lat,
+                estimated_value,
+                available,
+                metadata,
+                created_at,
+                updated_at
+            FROM items
+            WHERE owner_id = ?;
+        """.trimIndent()
+        val jdbcConnection = TransactionManager.current().connection.connection as Connection
+
+        jdbcConnection.prepareStatement(query).use { stmt ->
+            stmt.setObject(1, id)
+
+            stmt.executeQuery().use { rs ->
+                val list = mutableListOf<ItemEntity>()
+                while (rs.next()) list += rs.toItem()
+                list
+            }
+        }
+    }
 }
