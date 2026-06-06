@@ -9,6 +9,12 @@ import { createCircleIcon, createPinIcon } from "../utils/createMapIcons";
 
 const getItemLocation = (item) => item.current_location || item.currentLocation || null;
 
+const emptyGeoQuery = {
+  lat: "",
+  lon: "",
+  radius: "100"
+};
+
 const MapPage = () => {
   const mapRef = useRef(null);
   const [items, setItems] = useState([]);
@@ -17,8 +23,16 @@ const MapPage = () => {
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   const [currentPosition, setCurrentPosition] = useState([0, 0]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [geoQuery, setGeoQuery] = useState(emptyGeoQuery);
 
-  const { state } = useLocation();
+  const location = useLocation();
+  const [pageState, setPageState] = useState(location.state);
+
+  const filteredItems = items.filter((item) =>
+    (item.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase())
+  );
+
 
   const loadItems = async ({ silent = false } = {}) => {
     if (!silent) {
@@ -26,16 +40,39 @@ const MapPage = () => {
     }
     setError("");
 
-    try {
-      const response = state?.circle
-        ? await itemService.getNearbyItems({
-            lat: state.circle.lat,
-            lon: state.circle.lon,
-            radius: state.circle.radius
-          })
-        : await itemService.getItems();
+    let query = null;
+    if (pageState?.searchTerm) {
+        setSearchTerm(pageState.searchTerm);
+        setPageState(prev => ({
+          ...prev,
+          searchTerm: ""
+        }));
+    }
+    if (pageState?.point) {
+        await setGeoQuery(pageState.point);
+        query = pageState.point;
+    }
+    if (pageState?.circle) {
+        await setGeoQuery(pageState.circle);
+        query = pageState.circle;
+    }
 
-      setItems(Array.isArray(response) ? response : []);
+    try {
+        console.log(pageState);
+      if (pageState?.useClosest) {
+          loadClosest(query);
+      }
+      else {
+          const response = pageState?.circle
+            ? await itemService.getNearbyItems({
+                lat: pageState.circle.lat,
+                lon: pageState.circle.lon,
+                radius: pageState.circle.radius
+              })
+            : await itemService.getItems();
+
+            setItems(Array.isArray(response) ? response : []);
+      }
     } catch (requestError) {
       setError(requestError.message || "Failed to load items");
     } finally {
@@ -46,13 +83,8 @@ const MapPage = () => {
   };
 
   useEffect(() => {
-    if (state?.items) {
-      setItems(state.items);
-      setLoading(false);
-    }
-
-    loadItems({ silent: Boolean(state?.items) });
-  }, [state]);
+    loadItems();
+  }, [pageState]);
 
   useEffect(() => {
     const refreshItems = () => {
@@ -85,7 +117,7 @@ const MapPage = () => {
       document.removeEventListener("visibilitychange", refreshOnVisibility);
       window.clearInterval(intervalId);
     };
-  }, [state]);
+  }, [pageState]);
 
 
   const loadLocations = async () => {
@@ -123,17 +155,43 @@ const MapPage = () => {
       };
   }, []);
 
+
+  const setGeoCoordinates = (latitude, longitude, hint = "") => {
+    setGeoQuery((current) => ({
+      ...current,
+      lat: String(Number(latitude.toFixed(6))),
+      lon: String(Number(longitude.toFixed(6)))
+    }));
+  };
+
+  const loadClosest = async (query) => {
+    try {
+      const item = await itemService.getClosestItem(query);
+      setItems(item ? [item] : []);
+    } catch (requestError) {
+      setError(requestError.message || "Failed to load closest item");
+    }
+  };
+
+  const resetFilters = () => {
+    setGeoQuery(emptyGeoQuery);
+    setSearchTerm("");
+    setPageState(null);
+  };
+
     const blue = "#4C9CD1";
     const red = "#ff3333";
     const green = "#7CDE76";
+    const yellow = "#fcf403";
 
     const icons = useMemo(
       () => ({
-        redPinIcon: createPinIcon(red),
-        bluePinIcon: createPinIcon(blue),
-        greenPinIcon: createPinIcon(green),
-        blueCircleIcon: createCircleIcon(blue),
-        greenCircleIcon: createCircleIcon(green)
+        redPinIcon: createPinIcon(red, 0, 1),
+        bluePinIcon: createPinIcon(blue, 2, 3),
+        greenPinIcon: createPinIcon(green, 4, 5),
+        blueCircleIcon: createCircleIcon(blue, 6),
+        greenCircleIcon: createCircleIcon(green, 7),
+        yellowPinIcon: createPinIcon(yellow, 8)
       }),
       []
     );
@@ -145,6 +203,8 @@ const MapPage = () => {
         <h1>Map</h1>
       </div>
 
+      {error && <div className="alert alert-error">{error}</div>}
+
       <div className="map">
       <MapContainer center={[46.55918969285412, 15.63816553469581]} zoom={14} ref={mapRef} style={{height: "480px", width: "min(1120px)" }}>
           <TileLayer
@@ -155,7 +215,7 @@ const MapPage = () => {
                 <LayersControl.Overlay checked name="Items">
                     <LayerGroup>
                     {!loading && items.length > 0 &&
-                        items.map((item) => {
+                        filteredItems.map((item) => {
                             const itemLocation = getItemLocation(item);
 
                             if (itemLocation?.latitude == null || itemLocation?.longitude == null) {
@@ -186,7 +246,7 @@ const MapPage = () => {
                     <LayerGroup>
                       {!loading && locations.length > 0 &&
                            locations.map((location) => (
-                               <Marker key={location.id || location.name} position={[location.location.latitude, location.location.longitude]} icon={icons.greenCircleIcon} title={location.name}>
+                               <Marker key={location.id || location.name} position={[location.location.latitude, location.location.longitude]} icon={icons.greenPinIcon} title={location.name}>
                                   <Popup>
                                      {location.name}
                                      <br />
@@ -251,12 +311,48 @@ const MapPage = () => {
                     />
                   Locations
               </div>
+              {geoQuery?.lat != "" && geoQuery?.lon != "" && (
+              <div>
+                  <div
+                      style={{
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "50%",
+                        backgroundColor: yellow,
+                        display: "inline-block",
+                        marginRight: "8px"
+                      }}
+                    />
+                  Chosen Location
+              </div>
+              )}
           </div>
-
-          {state?.circle && (
-              <Circle center={[Number(state?.circle.lat), Number(state?.circle.lon)]} radius={Number(state?.circle.radius)} dashArray={[10, 10]} color={blue} />
+          {geoQuery?.lat != "" && geoQuery?.lon != "" && (
+              <Marker position={[Number(geoQuery.lat), Number(geoQuery.lon)]} icon={icons.yellowPinIcon} title={"Chosen location"}>
+                  <Popup>
+                       {pageState?.addressLocation ? pageState.addressLocation : "Chosen Location"}
+                  </Popup>
+              </Marker>
+          )}
+          {pageState?.circle && (
+              <Circle center={[Number(pageState?.circle.lat), Number(pageState?.circle.lon)]} radius={Number(pageState?.circle.radius)} dashArray={[10, 10]} color={blue} />
           )}
       </MapContainer>
+      </div>
+      <div className="map-filter-panel">
+        <div className="search-field">
+          <label htmlFor="item-search">Search items by name</label>
+            <input
+              id="item-search"
+              placeholder="Type item name..."
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+        </div>
+          <button className="secondary-button small-button reset-button" type="button" onClick={resetFilters}>
+              Reset Filters
+          </button>
       </div>
     </section>
   );

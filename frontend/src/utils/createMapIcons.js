@@ -1,8 +1,6 @@
 
-export const createCircleIcon = (color = "#3388ff") => {
+export const createCircleIcon = (color = "#3388ff", gradientId) => {
       const derivedColors = deriveMarkerColors(color);
-
-      const gradientId = `grad-${crypto.randomUUID()}`;
 
       return L.divIcon({
         className: "custom-circle-icon",
@@ -22,11 +20,8 @@ export const createCircleIcon = (color = "#3388ff") => {
       });
     }
 
-export const createPinIcon = (color = "#4C9CD1") => {
+export const createPinIcon = (color = "#4C9CD1", gradientId, strokeId) => {
       const derivedColors = deriveMarkerColors(color);
-
-      const gradientId = `gradient-${crypto.randomUUID()}`;
-      const strokeId = `stroke-${crypto.randomUUID()}`;
 
       return L.divIcon({
         className: "custom-pin-icon",
