@@ -134,11 +134,11 @@ class ItemRepository() {
         
             ?, -- estimated_value
             ?, -- available
-            ?,jsonb -- metadata
+            ?::jsonb, -- metadata
             ?, -- weight
             ?, -- length
             ?, -- height
-            ?:: -- width
+            ? -- width
         )
         RETURNING *,
     ST_X(current_location) AS lon,
