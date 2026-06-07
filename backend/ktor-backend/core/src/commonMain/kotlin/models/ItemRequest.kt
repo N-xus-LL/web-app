@@ -14,7 +14,11 @@ data class ItemRequest(
     val description: String?,
     val images: List<String>,
     val currentLocation: GeoPoint,
-    val estimatedValue: Double?,
     val available: Boolean,
+    val weight: Double,
+    val length: Double,
+    val width: Double,
+    val height: Double,
+    val estimatedValue: Double?,
     val metadata: JsonObject
 )
