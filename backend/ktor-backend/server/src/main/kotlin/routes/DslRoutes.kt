@@ -19,7 +19,7 @@ import nexus.repository.DslRepository
 fun Route.dslRoutes() {
     val dslRepository = DslRepository()
 
-    route("/dsl") {
+    route("/api/dsl") {
         post("/geojson") {
             val script = call.receiveText().trim()
             if (script.isBlank()) {

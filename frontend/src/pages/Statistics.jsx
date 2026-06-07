@@ -5,9 +5,9 @@ import loanService from "../services/loanService";
 import { getItemOwnerId } from "../utils/userDisplay";
 import {
   getLoanRecord,
-  getLoanStatus,
-  LOAN_STATUS
+  getLoanStatus
 } from "../utils/loanWorkflow";
+import { LoanStatus } from "../constants/referenceData";
 import {PieChart, PieLegend} from "../components/PieChart"
 import {DonutChart, DonutLegend} from "../components/DonutChart"
 import {BarChart} from "../components/BarChart"
@@ -141,16 +141,16 @@ const Statistics = ({ currentUser }) => {
           { label: "Cancelled", value: loanBorrowingStatuses[4], color: "#F52A2A" }
         ]);
 
-        const completed = countByStatus(allLoans, [LOAN_STATUS.COMPLETED]);
+        const completed = countByStatus(allLoans, [LoanStatus.Completed.value]);
         const active = countByStatus(allLoans, [
-          LOAN_STATUS.PENDING,
-          LOAN_STATUS.ACTIVE,
-          LOAN_STATUS.RETURNED
+          LoanStatus.BorrowingRequested.value,
+          LoanStatus.Active.value,
+          LoanStatus.Returned.value
         ]);
 
         const finished = countByStatus(allLoans, [
-          LOAN_STATUS.COMPLETED,
-          LOAN_STATUS.CANCELLED
+          LoanStatus.Completed.value,
+          LoanStatus.Cancelled.value
         ]);
         setLoanCompletionStatuses([
             { label: "Active", value: active, color: "#44A7F2" },

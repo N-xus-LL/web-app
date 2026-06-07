@@ -1,19 +1,6 @@
 import itemService from "../services/itemService";
-import { loanStatusOptions } from "../constants/referenceData";
+import { LoanStatus, loanStatusOptions, BlockingLoanStatuses } from "../constants/referenceData";
 
-export const LOAN_STATUS = {
-  PENDING: "pending",
-  ACTIVE: "active",
-  RETURNED: "returned",
-  COMPLETED: "completed",
-  CANCELLED: "cancelled"
-};
-
-export const BLOCKING_LOAN_STATUSES = [
-  LOAN_STATUS.PENDING,
-  LOAN_STATUS.ACTIVE,
-  LOAN_STATUS.RETURNED
-];
 
 export const getLoanRecord = (entry) => entry?.loan || entry;
 
@@ -24,30 +11,28 @@ export const getLoanStatus = (loan) => getLoanField(loan, "status", "status");
 export const getStatusLabel = (status) =>
   loanStatusOptions.find((option) => option.value === status)?.label || status || "Unknown";
 
-export const isBlockingLoanStatus = (status) => BLOCKING_LOAN_STATUSES.includes(status);
+export const isBlockingLoanStatus = (status) => BlockingLoanStatuses.includes(status);
 
 export const getWorkflowSteps = (status) => {
-  const steps = [
-    { key: "available", label: "Item available" },
-    { key: "request", label: "Borrow request" },
-    { key: "pending", label: "Awaiting approval" },
-    { key: "active", label: "Item borrowed" },
-    { key: "returned", label: "Return submitted" },
-    { key: "completed", label: "Available again" }
-  ];
+  const steps = Object.values(LoanStatus).filter(
+    (step) => step.value !== LoanStatus.Cancelled.value
+  );
 
   const activeIndexByStatus = {
-    [LOAN_STATUS.PENDING]: 2,
-    [LOAN_STATUS.ACTIVE]: 3,
-    [LOAN_STATUS.RETURNED]: 4,
-    [LOAN_STATUS.COMPLETED]: 5,
-    [LOAN_STATUS.CANCELLED]: 1
+    [LoanStatus.BorrowingRequested.value]: 0,
+    [LoanStatus.TermsProposed.value]: 1,
+    [LoanStatus.AwaitingPickup.value]: 2,
+    [LoanStatus.Active.value]: 3,
+    [LoanStatus.Returned.value]: 4,
+    [LoanStatus.Completed.value]: 5,
+    [LoanStatus.Cancelled.value]: -1
   };
 
   const activeIndex = activeIndexByStatus[status] ?? 0;
 
   return steps.map((step, index) => ({
-    ...step,
+    key: step.value,
+    label: step.label,
     done: index < activeIndex,
     current: index === activeIndex
   }));
@@ -80,8 +65,12 @@ export const buildItemUpdatePayload = (item, updates = {}) => {
       latitude: Number(location.latitude),
       longitude: Number(location.longitude)
     },
-    estimated_value: item.estimated_value ?? item.estimatedValue ?? null,
     available: updates.available ?? item.available,
+    weight: item.weight,
+    length: item.length,
+    width: item.width,
+    height: item.height,
+    estimated_value: item.estimated_value ?? item.estimatedValue ?? null,
     metadata: {}
   };
 };
