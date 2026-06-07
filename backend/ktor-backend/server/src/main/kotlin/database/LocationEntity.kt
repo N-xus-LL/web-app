@@ -9,6 +9,6 @@ data class LocationEntity(
     val location: GeoPoint,
     val locationType: String,
     val address: String,
-    val source_id: UUID,
+    val source_id: String,
     val metadata: String
 )

@@ -8,6 +8,7 @@ import geocodingService from "../services/geocodingService";
 import { createCircleIcon, createPinIcon } from "../utils/createMapIcons";
 
 const getItemLocation = (item) => item.current_location || item.currentLocation || null;
+const getLocationLabel = (location) => location.name || location.address || "Location";
 
 const emptyGeoQuery = {
   lat: "",
@@ -244,11 +245,11 @@ const MapPage = () => {
 
                 <LayersControl.Overlay checked name="Locations">
                     <LayerGroup>
-                      {!loading && locations.length > 0 &&
+                      {locations.length > 0 &&
                            locations.map((location) => (
-                               <Marker key={location.id || location.name} position={[location.location.latitude, location.location.longitude]} icon={icons.greenPinIcon} title={location.name}>
+                               <Marker key={location.id || getLocationLabel(location)} position={[location.location.latitude, location.location.longitude]} icon={icons.greenPinIcon} title={getLocationLabel(location)}>
                                   <Popup>
-                                     {location.name}
+                                     {getLocationLabel(location)}
                                      <br />
                                      {location.locationType}
                                   </Popup>

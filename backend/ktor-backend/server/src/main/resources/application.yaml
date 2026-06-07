@@ -1,7 +1,12 @@
 postgres:
-  url: ${POSTGRES_URL:-jdbc:postgresql://localhost:5432/lendloop}
-  user: ${POSTGRES_USER:-postgres}
-  password: ${POSTGRES_PASSWORD:-postgres}
+  url: jdbc:postgresql://localhost:5432/lendloop
+  user: postgres
+  password: postgres
+#on server
+# postgres:
+#   url: ${POSTGRES_URL:-jdbc:postgresql://localhost:5432/lendloop}
+#   user: ${POSTGRES_USER:-postgres}
+#   password: ${POSTGRES_PASSWORD:-postgres}
 ktor:
   deployment:
     port: 8080
