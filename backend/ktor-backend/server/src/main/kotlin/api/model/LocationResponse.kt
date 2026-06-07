@@ -7,9 +7,10 @@ import nexus.models.GeoPoint
 @Serializable
 data class LocationResponse(
     val id: String,
-    val name: String,
-    val locationType: String? = null,
+    val locality_id: String,
     val location: GeoPoint,
-    val source: String? = null,
+    val locationType: String,
+    val address: String,
+    val source_id: String,
     val metadata: JsonObject
 )
