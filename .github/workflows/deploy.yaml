@@ -37,4 +37,4 @@ jobs:
         uses: distributhor/workflow-webhook@v3
         with:
           webhook_url: ${{ secrets.WEBHOOK_URL }}
-          headers: '{"X-Webhook-Secret":"${{ secrets.WEBHOOK_SECRET }}"}'
+          webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
