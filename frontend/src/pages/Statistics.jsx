@@ -7,10 +7,7 @@ import {
   getLoanRecord,
   getLoanStatus
 } from "../utils/loanWorkflow";
-import { LoanStatus } from "../constants/referenceData";
-import {PieChart, PieLegend} from "../components/PieChart"
-import {DonutChart, DonutLegend} from "../components/DonutChart"
-import {BarChart} from "../components/BarChart"
+import { PieChart, DonutChart, BarChart, ChartLegend } from "../components/Charts"
 
 const countByStatus = (loans, statuses) =>
   loans.filter((entry) => statuses.includes(getLoanStatus(getLoanRecord(entry)))).length;
@@ -265,17 +262,17 @@ const Statistics = ({ currentUser }) => {
           <div className="chart-card">
             <div className="chart-title">Lending</div>
                 <DonutChart data={lendingData} />
-                <DonutLegend data={lendingData} />
+                <ChartLegend data={lendingData} />
           </div>
           <div className="chart-card">
             <div className="chart-title">Borrowing</div>
                 <DonutChart data={borrowingData} />
-                <DonutLegend data={borrowingData} />
+                <ChartLegend data={borrowingData} />
           </div>
           <div className="chart-card">
             <div className="chart-title">All Loans</div>
                 <PieChart data={loanCompletionStatuses} />
-                <PieLegend data={loanCompletionStatuses} />
+                <ChartLegend data={loanCompletionStatuses} />
           </div>
 
         </div>

@@ -1156,6 +1156,7 @@ display: flex;
   min-height: 480px;
   border: 1px solid var(--map-border);
   border-radius: 8px;
+  margin-bottom: 8px;
 }
 
 .stats-page-grid {
@@ -1588,4 +1589,14 @@ display: flex;
 
 .chart-text {
   fill: var(--text-label);
+}
+
+.map-filter-panel {
+  display: flex;
+  gap: 10px;
+}
+
+.reset-button {
+  height: 100%;
+  margin-top: 30px;
 }

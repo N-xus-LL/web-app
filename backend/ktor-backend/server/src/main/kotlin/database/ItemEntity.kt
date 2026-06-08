@@ -15,8 +15,12 @@ class ItemEntity (
     val description: String?,
     val images: List<String>,
     val currentLocation: GeoPoint,
-    val estimatedValue: BigDecimal?,
     val available: Boolean,
+    val weight: Double,
+    val length: Double,
+    val width: Double,
+    val height: Double,
+    val estimatedValue: BigDecimal?,
     val metadata: String,
     val createdAt: Instant,
     val updatedAt: Instant

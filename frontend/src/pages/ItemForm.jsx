@@ -16,7 +16,11 @@ const emptyItemForm = {
   latitude: "",
   longitude: "",
   estimated_value: "",
-  available: true
+  available: true,
+  weight: "",
+  length: "",
+  height: "",
+  width: ""
 };
 
 const getItemLocation = (item) => item.current_location || item.currentLocation || {};
@@ -36,7 +40,11 @@ const toItemRequest = (form) => ({
   },
   estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
   available: form.available,
-  metadata: {}
+  metadata: {},
+  weight: Number(form.weight),
+  length: Number(form.length),
+  height: Number(form.height),
+  width: Number(form.width)
 });
 
 const ItemForm = ({ currentUser }) => {
@@ -275,6 +283,23 @@ const ItemForm = ({ currentUser }) => {
               <label htmlFor="description">Description</label>
               <input id="description" name="description" required value={form.description} onChange={handleChange} />
             </div>
+            <div className="field">
+              <label htmlFor="weight">Weight</label>
+              <input id="weight" name="weight" required value={form.weight} onChange={handleChange} />
+            </div>
+            <div className="field">
+              <label htmlFor="length">Length</label>
+              <input id="length" name="length" required value={form.length} onChange={handleChange} />
+            </div>
+            <div className="field">
+              <label htmlFor="height">Height</label>
+              <input id="height" name="height" required value={form.height} onChange={handleChange} />
+            </div>
+            <div className="field">
+              <label htmlFor="width">Width</label>
+              <input id="width" name="width" required value={form.width} onChange={handleChange} />
+            </div>
+
             <div className="field">
               <label htmlFor="images">Image</label>
               <input id="images" name="images" placeholder="Comma separated URLs" value={form.images} onChange={handleChange} />
