@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Send deployment webhook
-        uses: distributhor/workflow-webhook@v3
+        uses: joelwmale/webhook-action@v2
         with:
-          webhook_url: ${{ secrets.WEBHOOK_URL }}
-          webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
+          url: ${{ secrets.WEBHOOK_URL }}
+          headers: '{"X-Webhook-Secret": "${{ secrets.WEBHOOK_SECRET }}"}'
