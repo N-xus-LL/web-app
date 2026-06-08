@@ -1,8 +1,8 @@
 package nexus.repository
 
-import nexus.dsl.Location
-import nexus.dsl.Locker
-import nexus.dsl.LockerStation
+import dsl.Location
+import dsl.Locker
+import dsl.LockerStation
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.sql.Connection

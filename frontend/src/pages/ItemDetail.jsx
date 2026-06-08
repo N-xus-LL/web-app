@@ -184,27 +184,22 @@ const ItemDetail = ({ currentUser }) => {
                   <OwnerLink ownerId={ownerId} username={ownerUsername} />
                 </dd>
               </div>
+
               <div>
-                <dt>Estimated value</dt>
-                <dd>{item.estimated_value ?? item.estimatedValue ?? "Not set"}</dd>
+                <dt>Estimated Value</dt>
+                <dd>{item.estimated_value ?? item.estimatedValue ?? "Not Set"}</dd>
               </div>
-              <div>
-                <dt>Condition</dt>
-                <dd>{getOptionLabel(itemConditionOptions, item.condition_id || item.conditionId)}</dd>
-              </div>
-              <div>
-                <dt>Damage policy</dt>
-                <dd>
-                  {getOptionLabel(
-                    damagePolicyOptions,
-                    item.default_damage_policy_id || item.defaultDamagePolicyId
-                  )}
-                </dd>
-              </div>
+
               <div>
                 <dt>Category</dt>
                 <dd>{getOptionLabel(categoryOptions, item.category_id || item.categoryId)}</dd>
               </div>
+
+              <div>
+                <dt>Weight</dt>
+                <dd>{item.weight ?? "Not Set"}</dd>
+              </div>
+
               {location.latitude != null && location.longitude != null && (
                 <div>
                   <dt>Location</dt>
@@ -213,6 +208,37 @@ const ItemDetail = ({ currentUser }) => {
                   </dd>
                 </div>
               )}
+
+              <div>
+                <dt>Length</dt>
+                <dd>{item.length ?? "Not Set"}</dd>
+              </div>
+
+              <div>
+                <dt>Condition</dt>
+                <dd>{getOptionLabel(itemConditionOptions, item.condition_id || item.conditionId)}</dd>
+              </div>
+
+              <div>
+                <dt>Width</dt>
+                <dd>{item.width ?? "Not Set"}</dd>
+              </div>
+
+              <div>
+                <dt>Damage Policy</dt>
+                <dd>
+                  {getOptionLabel(
+                    damagePolicyOptions,
+                    item.default_damage_policy_id || item.defaultDamagePolicyId
+                  )}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Height</dt>
+                <dd>{item.height ?? "Not Set"}</dd>
+              </div>
+
               {loanStatus && (
                 <div>
                   <dt>Loan status</dt>
@@ -224,11 +250,11 @@ const ItemDetail = ({ currentUser }) => {
             {isOwner && (
               <div className="button-row">
                 <Link className="primary-button" to={`/items/${item.id}/edit`}>
-                  Edit item
+                  Edit Item
                 </Link>
                 {loanId && (
                   <Link className="secondary-button" to={`/loans/${loanId}`}>
-                    View loan request
+                    View Loan Request
                   </Link>
                 )}
               </div>
@@ -236,7 +262,7 @@ const ItemDetail = ({ currentUser }) => {
 
             {canRequest && (
               <div className="resource-panel borrow-request-panel">
-                <h3>Request to borrow</h3>
+                <h3>Request to Borrow</h3>
                 <p>Your request goes to the owner for approval before the item is borrowed.</p>
                 <div className="field">
                   <label htmlFor="request_notes">Message (optional)</label>
@@ -253,7 +279,7 @@ const ItemDetail = ({ currentUser }) => {
                   type="button"
                   onClick={handleBorrowRequest}
                 >
-                  {requesting ? "Sending request..." : "Send borrow request"}
+                  {requesting ? "Sending Borrow Request..." : "Send Borrow Request"}
                 </button>
               </div>
             )}
@@ -270,7 +296,7 @@ const ItemDetail = ({ currentUser }) => {
             {isBorrowerOnLoan && loanId && (
               <div className="button-row">
                 <Link className="primary-button" to={`/loans/${loanId}`}>
-                  View your borrow
+                  View your Borrow
                 </Link>
               </div>
             )}

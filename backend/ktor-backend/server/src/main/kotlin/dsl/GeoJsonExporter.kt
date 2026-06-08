@@ -1,4 +1,4 @@
-package nexus.dsl
+package dsl
 
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -6,42 +6,61 @@ import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import nexus.dsl.BorrowerBlock
+import nexus.dsl.LenderBlock
 
 object GeoJsonExporter {
     fun exportApp(
         lender: LenderBlock,
         borrower: BorrowerBlock,
-        referencePoint: Pair<Double, Double>,
+        meetingPoint: Pair<Double, Double>,
         lockers: List<Locker>
     ): JsonObject {
-        val visibleLockers = lockers
-            .filter { it.isSelected }
-            .sortedBy { it.distance }
+        try {
+            val visibleLockers = lockers
+                .filter { it.isSelected }
+                .sortedBy { it.distance }
 
-        return featureCollection(
-            buildList {
-                add(userFeature("lender", lender.lat, lender.lon))
-                add(userFeature("borrower", borrower.lat, borrower.lon))
-                add(referenceFeature(referencePoint))
-                addAll(visibleLockers.map { lockerFeature(it, includeDebugProperties = false) })
-            }
-        )
+            return featureCollection(
+                buildList {
+                    add(userFeature("lender", lender.lat, lender.lon))
+                    add(userFeature("borrower", borrower.lat, borrower.lon))
+                    add(meetingFeature(meetingPoint))
+                    addAll(visibleLockers.map { lockerFeature(it, includeDebugProperties = false) })
+                }
+            )
+        } catch (e : Exception) {
+            println(e.message)
+        }
+
+        return JsonObject(mapOf())
     }
 
     fun exportDebug(
         lender: LenderBlock,
         borrower: BorrowerBlock,
+        meetingPoint: Pair<Double, Double>,
         referencePoint: Pair<Double, Double>,
         lockers: List<Locker>
     ): JsonObject {
-        return featureCollection(
-            buildList {
-                add(userFeature("lender", lender.lat, lender.lon))
-                add(userFeature("borrower", borrower.lat, borrower.lon))
-                add(referenceFeature(referencePoint))
-                addAll(lockers.sortedBy { it.distance }.map { lockerFeature(it, includeDebugProperties = true) })
-            }
-        )
+        try {
+            val visibleLockers = lockers
+                .sortedBy { it.distance }
+
+            return featureCollection(
+                buildList {
+                    add(userFeature("lender", lender.lat, lender.lon))
+                    add(userFeature("borrower", borrower.lat, borrower.lon))
+                    add(meetingFeature(meetingPoint))
+                    add(referenceFeature(referencePoint))
+                    addAll(visibleLockers.map { lockerFeature(it, includeDebugProperties = true) })
+                }
+            )
+        } catch (e : Exception) {
+            println(e.message)
+        }
+
+        return JsonObject(mapOf())
     }
 
     private fun featureCollection(features: List<JsonObject>): JsonObject =
@@ -61,13 +80,23 @@ object GeoJsonExporter {
             }
         )
 
+    private fun meetingFeature(meetingPoint: Pair<Double, Double>): JsonObject =
+        pointFeature(
+            lon = meetingPoint.second,
+            lat = meetingPoint.first,
+            properties = buildJsonObject {
+                put("kind", "meeting_point")
+                put("label", "Meeting Point")
+            }
+        )
+
     private fun referenceFeature(referencePoint: Pair<Double, Double>): JsonObject =
         pointFeature(
             lon = referencePoint.second,
             lat = referencePoint.first,
             properties = buildJsonObject {
                 put("kind", "reference_point")
-                put("label", "Reference point")
+                put("label", "Reference Point")
             }
         )
 

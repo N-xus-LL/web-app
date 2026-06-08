@@ -82,24 +82,16 @@ const Statistics = ({ currentUser }) => {
         const borrowingList = Array.isArray(borrowings) ? borrowings : [];
         const allLoans = [...lendingList, ...borrowingList];
 
-        var loanLendingStatuses = [0, 0, 0, 0, 0];
+        var loanLendingStatuses = [0, 0, 0, 0, 0, 0, 0];
         for (var i = 0; i < lendingList.length; i++) {
             switch (lendingList[i].status) {
-              case "pending":
-                loanLendingStatuses[0]++;
-                break;
-              case "active":
-                loanLendingStatuses[1]++;
-                break;
-              case "returned":
-                 loanLendingStatuses[2]++;
-                break;
-              case "completed":
-                loanLendingStatuses[3]++;
-                break;
-              case "cancelled":
-                loanLendingStatuses[4]++;
-                break;
+              case "borrowing_requested": loanLendingStatuses[0]++; break;
+              case "terms_proposed": loanLendingStatuses[1]++; break;
+              case "awaiting_pickup": loanLendingStatuses[2]++; break;
+              case "active": loanLendingStatuses[3]++; break;
+              case "returned": loanLendingStatuses[4]++; break;
+              case "completed": loanLendingStatuses[5]++; break;
+              case "cancelled": loanLendingStatuses[6]++; break;
             }
         }
         setLendingData([
@@ -110,24 +102,16 @@ const Statistics = ({ currentUser }) => {
           { label: "Cancelled", value: loanLendingStatuses[4], color: "#F52A2A" }
         ]);
 
-        var loanBorrowingStatuses = [0, 0, 0, 0, 0];
+        var loanBorrowingStatuses = [0, 0, 0, 0, 0, 0, 0];
         for (var i = 0; i < borrowingList.length; i++) {
             switch (borrowingList[i].status) {
-                case "pending":
-                    loanBorrowingStatuses[0]++;
-                    break;
-                case "active":
-                    loanBorrowingStatuses[1]++;
-                    break;
-                case "returned":
-                    loanBorrowingStatuses[2]++;
-                    break;
-                case "completed":
-                    loanBorrowingStatuses[3]++;
-                    break;
-                case "cancelled":
-                    loanBorrowingStatuses[4]++;
-                    break;
+              case "borrowing_requested": loanBorrowingStatuses[0]++; break;
+              case "terms_proposed": loanBorrowingStatuses[1]++; break;
+              case "awaiting_pickup": loanBorrowingStatuses[2]++; break;
+              case "active": loanBorrowingStatuses[3]++; break;
+              case "returned": loanBorrowingStatuses[4]++; break;
+              case "completed": loanBorrowingStatuses[5]++; break;
+              case "cancelled": loanBorrowingStatuses[6]++; break;
             }
         }
         setBorrowingData([

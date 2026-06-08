@@ -40,11 +40,11 @@ const toItemRequest = (form) => ({
   },
   estimated_value: form.estimated_value ? Number(form.estimated_value) : null,
   available: form.available,
+  weight: form.weight ? Number(form.weight) : 0,
+  length: form.length ? Number(form.length) : 0,
+  height: form.height ? Number(form.height) : 0,
+  width: form.width ? Number(form.width) : 0,
   metadata: {},
-  weight: Number(form.weight),
-  length: Number(form.length),
-  height: Number(form.height),
-  width: Number(form.width)
 });
 
 const ItemForm = ({ currentUser }) => {
@@ -95,6 +95,10 @@ const ItemForm = ({ currentUser }) => {
           name: item.name || "",
           description: item.description || "",
           images: Array.isArray(item.images) ? item.images.join(", ") : "",
+          weight: item.weight,
+          length: item.length,
+          width:  item.length,
+          height: item.height,
           latitude: location.latitude ?? "",
           longitude: location.longitude ?? "",
           estimated_value: item.estimated_value ?? item.estimatedValue ?? "",
@@ -182,6 +186,10 @@ const ItemForm = ({ currentUser }) => {
         throw new Error("Set a location using your address or current position.");
       }
 
+      if (!form.weight || !form.length || !form.height || !form.width) {
+        throw new Error("Weight, length, height, and width are required fields.");
+      }
+
       const payload = toItemRequest({ ...form, owner_id: currentUserId });
 
       if (isEdit) {
@@ -222,11 +230,22 @@ const ItemForm = ({ currentUser }) => {
         <div className="state-panel">Loading item...</div>
       ) : canCreate && (
         <form className="resource-panel item-form-page" onSubmit={submitItem}>
-          <div className="form-grid two-columns">
+
+          <div className="form-grid">
             <div className="field">
               <label htmlFor="name">Name</label>
               <input id="name" name="name" required value={form.name} onChange={handleChange} />
             </div>
+          </div>
+
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="description">Description</label>
+              <input id="description" name="description" required value={form.description} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div className="form-grid">
             <div className="field location-field-span">
               <label htmlFor="address_search">Address</label>
               <input
@@ -236,8 +255,12 @@ const ItemForm = ({ currentUser }) => {
                 value={addressQuery}
                 onChange={(event) => setAddressQuery(event.target.value)}
               />
+              {locationHint && (
+                <p className="location-hint location-field-span">{locationHint}</p>
+              )}
             </div>
-            <div className="field location-actions">
+
+            <div className="field location-actions two-columns">
               <div className="button-row location-button-row">
                 <button
                   className="secondary-button small-button"
@@ -245,7 +268,7 @@ const ItemForm = ({ currentUser }) => {
                   type="button"
                   onClick={handleAddressSearch}
                 >
-                  {geocoding ? "Searching..." : "Find from address"}
+                  {geocoding ? "Searching..." : "Find from Address"}
                 </button>
                 <button
                   className="secondary-button small-button"
@@ -253,36 +276,71 @@ const ItemForm = ({ currentUser }) => {
                   type="button"
                   onClick={handleUseCurrentLocation}
                 >
-                  {locating ? "Getting location..." : "Use my location"}
+                  {locating ? "Getting location..." : "Use my Location"}
                 </button>
               </div>
+
+              <div className="field field-row checkbox-field">
+                <label htmlFor="available">Available</label>
+                <input id="available" name="available" type="checkbox" checked={form.available} onChange={handleChange} />
+              </div>
             </div>
-            <div className="field">
-              <label htmlFor="latitude">Latitude</label>
-              <input id="latitude" name="latitude" readOnly required type="number" step="any" value={form.latitude} />
-            </div>
-            <div className="field">
-              <label htmlFor="longitude">Longitude</label>
-              <input id="longitude" name="longitude" readOnly required type="number" step="any" value={form.longitude} />
-            </div>
-            {locationHint && (
-              <p className="location-hint location-field-span">{locationHint}</p>
-            )}
-            <div className="field">
-              <label htmlFor="estimated_value">Estimated value</label>
-              <input id="estimated_value" name="estimated_value" type="number" step="any" required value={form.estimated_value} onChange={handleChange} />
-            </div>
-            <div className="field checkbox-field">
-              <label htmlFor="available">Available</label>
-              <input id="available" name="available" type="checkbox" checked={form.available} onChange={handleChange} />
+
+            <div className="form-grid two-columns">
+              <div className="field">
+                <label htmlFor="latitude">Latitude</label>
+                <input id="latitude" name="latitude" readOnly required type="number" step="any" value={form.latitude} />
+              </div>
+              <div className="field">
+                <label htmlFor="longitude">Longitude</label>
+                <input id="longitude" name="longitude" readOnly required type="number" step="any" value={form.longitude} />
+              </div>
             </div>
           </div>
 
-          <div className="form-grid">
+          <div className="form-grid four-columns">
             <div className="field">
-              <label htmlFor="description">Description</label>
-              <input id="description" name="description" required value={form.description} onChange={handleChange} />
+              <label htmlFor="category_id">Category</label>
+              <select id="category_id" name="category_id" value={form.category_id} onChange={handleChange}>
+                {categoryOptions.map((option) => (
+                  <option key={option.label} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            <div className="field">
+              <label htmlFor="condition_id">Condition</label>
+              <select id="condition_id" name="condition_id" required value={form.condition_id} onChange={handleChange}>
+                <option value="">No Condition</option>
+                {itemConditionOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="default_damage_policy_id">Damage Policy</label>
+              <select id="default_damage_policy_id" name="default_damage_policy_id" required value={form.default_damage_policy_id} onChange={handleChange}>
+                <option value="">No Policy</option>
+                {damagePolicyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="estimated_value">Estimated Value</label>
+              <input id="estimated_value" name="estimated_value" type="number" step="any" required value={form.estimated_value} onChange={handleChange} />
+            </div>
+          </div>
+
+          <div className="form-grid four-columns">
             <div className="field">
               <label htmlFor="weight">Weight</label>
               <input id="weight" name="weight" required value={form.weight} onChange={handleChange} />
@@ -299,45 +357,12 @@ const ItemForm = ({ currentUser }) => {
               <label htmlFor="width">Width</label>
               <input id="width" name="width" required value={form.width} onChange={handleChange} />
             </div>
+          </div>
 
+          <div className="form-grid">
             <div className="field">
               <label htmlFor="images">Image</label>
               <input id="images" name="images" placeholder="Comma separated URLs" value={form.images} onChange={handleChange} />
-            </div>
-          </div>
-
-          <div className="form-grid three-columns">
-            <div className="field">
-              <label htmlFor="category_id">Category ID</label>
-              <select id="category_id" name="category_id" value={form.category_id} onChange={handleChange}>
-                {categoryOptions.map((option) => (
-                  <option key={option.label} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="condition_id">Condition</label>
-              <select id="condition_id" name="condition_id" required value={form.condition_id} onChange={handleChange}>
-                <option value="">No condition</option>
-                {itemConditionOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="default_damage_policy_id">Damage policy</label>
-              <select id="default_damage_policy_id" name="default_damage_policy_id" required value={form.default_damage_policy_id} onChange={handleChange}>
-                <option value="">No policy</option>
-                {damagePolicyOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 

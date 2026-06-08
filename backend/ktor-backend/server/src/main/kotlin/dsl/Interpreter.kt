@@ -1,7 +1,23 @@
-package nexus.dsl
+package dsl
 
 import kotlin.math.*
 import kotlinx.serialization.json.JsonObject
+import nexus.dsl.AssignmentStatement
+import nexus.dsl.BinaryExpression
+import nexus.dsl.BinaryOp
+import nexus.dsl.BorrowerBlock
+import nexus.dsl.ExpressionNode
+import nexus.dsl.ForEachLockerLoop
+import nexus.dsl.IdentifierLiteral
+import nexus.dsl.IfStatement
+import nexus.dsl.ItemBlock
+import nexus.dsl.LenderBlock
+import nexus.dsl.NumberLiteral
+import nexus.dsl.OutputStatement
+import nexus.dsl.PropertyAccess
+import nexus.dsl.SearchBlock
+import nexus.dsl.StatementNode
+import nexus.dsl.ValidatedAST
 
 
 enum class LockerStatus {
@@ -58,6 +74,7 @@ class Interpreter(
     private val item     = ast.configurations["item"] as ItemBlock
     private val search   = ast.configurations["search"] as SearchBlock
     private val referencePoint = calculateReferencePoint()
+    private var meetingPoint   = Pair(0.0, 0.0)
     private var lockersInRadius = mutableListOf<Locker>()
     private var lockersMatching = mutableListOf<Locker>()
     private var selectedLocker: Locker? = null
@@ -81,7 +98,6 @@ class Interpreter(
             executeStatement(statement, runtimeEnv)
         }
 
-        markSelectedLocker()
         executed = true
 
         // Return evaluated collection results back to your service layer
@@ -96,8 +112,8 @@ class Interpreter(
         val mode = ast.outputMode?.mode?.lowercase() ?: "app"
 
         return when (mode) {
-            "debug" -> GeoJsonExporter.exportDebug(lender, borrower, referencePoint, lockers)
-            else -> GeoJsonExporter.exportApp(lender, borrower, referencePoint, lockers)
+            "debug" -> GeoJsonExporter.exportDebug(lender, borrower, meetingPoint, referencePoint, lockers)
+            else -> GeoJsonExporter.exportApp(lender, borrower, meetingPoint, lockers)
         }
     }
 
@@ -302,9 +318,16 @@ class Interpreter(
         }.toMutableList()
     }
 
-    // Finding closest candidate locker
+    // Finding the closest candidate locker
     private fun findClosest() {
         selectedLocker = lockersMatching.minByOrNull { it.distance }
+        if (selectedLocker == null) {
+            throw RuntimeError("No matching lockers found for the given item dimensions")
+        }
+
+        meetingPoint = Pair(
+            selectedLocker!!.station.location.lat,
+            selectedLocker!!.station.location.lon)
         markSelectedLocker()
     }
 

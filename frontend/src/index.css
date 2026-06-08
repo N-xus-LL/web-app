@@ -133,6 +133,10 @@ button {
   cursor: pointer;
 }
 
+.field-row {
+  grid-template-columns: max-content auto;
+}
+
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -846,6 +850,10 @@ display: flex;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.four-columns {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .checkbox-field {
   align-content: end;
 }
@@ -1472,7 +1480,8 @@ display: flex;
   .stats-strip,
   .stats-page-grid,
   .two-columns,
-  .three-columns {
+  .three-columns,
+  .four-columns {
     grid-template-columns: 1fr;
   }
 

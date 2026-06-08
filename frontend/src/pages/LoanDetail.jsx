@@ -42,12 +42,10 @@ const LoanDetail = ({ currentUser }) => {
   // Terms & Modal States
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState("midpoint");
-  const [meetingPoint, setMeetingPoint] = useState(null); // { lat, lon } from DSL execution
+  const [borrowerPoint, setBorrowerPoint] = useState({ lat: 46.562, lon: 15.642 });
+  const [meetingPoint, setMeetingPoint] = useState(null);
+  const [lenderPoint, setLenderPoint] = useState({ lat: 46.559, lon: 15.638 });
   const [previewLoading, setPreviewLoading] = useState(false);
-
-  // Hardcoded fallback coordinates for users if they aren't explicitly provided by your profiles yet
-  const defaultLenderCoords = { lat: 46.559, lon: 15.638 };
-  const defaultBorrowerCoords = { lat: 46.562, lon: 15.642 };
 
   const loadLoan = async () => {
     setLoading(true);
@@ -112,10 +110,10 @@ const LoanDetail = ({ currentUser }) => {
       };
 
       const result = await dslService.executeDslQuery({
-        lenderLat: defaultLenderCoords.lat,
-        lenderLon: defaultLenderCoords.lon,
-        borrowerLat: defaultBorrowerCoords.lat,
-        borrowerLon: defaultBorrowerCoords.lon,
+        lenderLat: lenderPoint.lat,
+        lenderLon: lenderPoint.lon,
+        borrowerLat: borrowerPoint.lat,
+        borrowerLon: borrowerPoint.lon,
         item: itemPayload,
         strategy: strategyName,
         initialRadius: 100,
@@ -446,7 +444,7 @@ const LoanDetail = ({ currentUser }) => {
         <div className="modal-overlay" style={modalOverlayStyle}>
           <div className="modal-card" style={modalCardStyle}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h2>Review Fulfillment Terms</h2>
+              <h2>Review Borrowing Terms</h2>
               <button className="secondary-button match-button" onClick={() => setIsTermsModalOpen(false)} style={{ padding: "4px 10px" }}>✕</button>
             </div>
 
@@ -460,8 +458,8 @@ const LoanDetail = ({ currentUser }) => {
                 style={{ width: "100%", padding: "8px", borderRadius: "6px" }}
               >
                 <option value="midpoint">Midpoint Strategy</option>
-                <option value="lender_preferred">Lender Priority Strategy</option>
-                <option value="balanced_radius">Minimum Distance Vector</option>
+                <option value="near_lender">Lender Priority Strategy</option>
+                <option value="near_borrower">Borrower Priority Strategy</option>
               </select>
             </div>
 
@@ -471,7 +469,7 @@ const LoanDetail = ({ currentUser }) => {
                 <div style={mapLoaderBackdropStyle}>Evaluating DSL Conditions...</div>
               )}
               <MapContainer 
-                center={[defaultLenderCoords.lat, defaultLenderCoords.lon]} 
+                center={[lenderPoint.lat, lenderPoint.lon]} 
                 zoom={12} 
                 style={{ height: "100%", width: "100%" }}
               >
@@ -480,10 +478,20 @@ const LoanDetail = ({ currentUser }) => {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 
-                {/* Visualizing dynamic meeting coordinates returned by the DSL parser script */}
+                {/* Visualizing coordinates returned by the DSL parser script */}
+                {lenderPoint && (
+                  <Marker position={[lenderPoint.lat, lenderPoint.lon]} icon={createPinIcon("#0087CC")}>
+                    <Popup>Lender Point</Popup>
+                  </Marker>
+                )}
                 {meetingPoint && (
-                  <Marker position={[meetingPoint.lat, meetingPoint.lon]} icon={createPinIcon("#4C9CD1")}>
+                  <Marker position={[meetingPoint.lat, meetingPoint.lon]} icon={createPinIcon("#00babe")}>
                     <Popup>Proposed Meeting Point ({selectedStrategy})</Popup>
+                  </Marker>
+                )}
+                {borrowerPoint && (
+                  <Marker position={[borrowerPoint.lat, borrowerPoint.lon]} icon={createPinIcon("#72E57C")}>
+                    <Popup>Lender Point</Popup>
                   </Marker>
                 )}
               </MapContainer>
@@ -498,7 +506,7 @@ const LoanDetail = ({ currentUser }) => {
               )}
               {isLender && (
                 <button className="primary-button" onClick={handleProposeNewTerms} disabled={previewLoading}>
-                  Propose New Terms
+                  Propose Borrowing Terms
                 </button>
               )}
               <button className="secondary-button" onClick={() => setIsTermsModalOpen(false)}>
@@ -532,8 +540,9 @@ const modalOverlayStyle = {
 };
 
 const modalCardStyle = {
-  backgroundColor: "#fff",
+  backgroundColor: "var(--bg-surface);",
   padding: "24px",
+  border: "1px solid var(--border-input)",
   borderRadius: "8px",
   width: "100%",
   maxWidth: "540px",
