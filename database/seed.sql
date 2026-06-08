@@ -20,6 +20,33 @@ INSERT INTO item_conditions (id, name) VALUES
 ('poor', 'Poor'),
 ('damaged', 'Damaged');
 
+INSERT INTO location_sources (id, name, description) VALUES
+('manual', 'Manual', 'Location was entered manually'),
+('google_maps', 'Google Maps', 'Location was resolved from Google Maps'),
+('openstreetmap', 'OpenStreetMap', 'Location was resolved from OpenStreetMap or Nominatim');
+
+INSERT INTO countries (id, name, country_code) VALUES
+('33333333-3333-3333-3333-333333333333', 'Slovenia', 'SI');
+
+INSERT INTO localities (
+    id,
+    country_id,
+    name,
+    locality_type,
+    region,
+    municipality,
+    postal_code,
+    source_id,
+    external_id,
+    metadata
+) VALUES
+('44444444-4444-4444-4444-444444444441', '33333333-3333-3333-3333-333333333333', 'Maribor', 'city', 'Styria', 'Maribor', '2000', 'manual', NULL, '{}'::jsonb),
+('44444444-4444-4444-4444-444444444442', '33333333-3333-3333-3333-333333333333', 'Hoce-Slivnica', 'municipality', 'Styria', 'Hoce-Slivnica', '2311', 'manual', NULL, '{}'::jsonb),
+('44444444-4444-4444-4444-444444444443', '33333333-3333-3333-3333-333333333333', 'Miklavz na Dravskem Polju', 'municipality', 'Styria', 'Miklavz na Dravskem Polju', '2204', 'manual', NULL, '{}'::jsonb),
+('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Duplek', 'municipality', 'Styria', 'Duplek', '2241', 'manual', NULL, '{}'::jsonb),
+('44444444-4444-4444-4444-444444444445', '33333333-3333-3333-3333-333333333333', 'Pesnica', 'municipality', 'Styria', 'Pesnica', '2211', 'manual', NULL, '{}'::jsonb),
+('44444444-4444-4444-4444-444444444446', '33333333-3333-3333-3333-333333333333', 'Race-Fram', 'municipality', 'Styria', 'Race-Fram', '2327', 'manual', NULL, '{}'::jsonb);
+
 INSERT INTO users (
     id,
     username,
@@ -148,12 +175,93 @@ INSERT INTO items (
       );
 
 INSERT INTO locations (
-    name,
+    id,
+    locality_id,
+    location,
     location_type,
-    location
+    address,
+    source_id,
+    metadata
 )
 VALUES (
-    'Europark',
+    '55555555-5555-5555-5555-555555555551',
+    '44444444-4444-4444-4444-444444444441',
+    ST_SetSRID(ST_MakePoint(15.6520, 46.5530), 4326),
     'mall',
-    ST_SetSRID(ST_MakePoint(15.652, 46.553), 4326)
+    'Pobreska cesta 18, 2000 Maribor',
+    'manual',
+    '{"label":"Europark Maribor"}'::jsonb
+),
+(
+    '55555555-5555-5555-5555-555555555552',
+    '44444444-4444-4444-4444-444444444441',
+    ST_SetSRID(ST_MakePoint(15.6469, 46.5590), 4326),
+    'transit_station',
+    'Partizanska cesta 50, 2000 Maribor',
+    'manual',
+    '{"label":"Maribor Bus Station"}'::jsonb
+);
+
+INSERT INTO locker_stations (
+    id,
+    location_id,
+    station_name,
+    working_times
+) VALUES
+(
+    '66666666-6666-6666-6666-666666666661',
+    '55555555-5555-5555-5555-555555555551',
+    'Europark Locker Station',
+    '{"monday":"00:00-24:00","tuesday":"00:00-24:00","wednesday":"00:00-24:00","thursday":"00:00-24:00","friday":"00:00-24:00","saturday":"00:00-24:00","sunday":"00:00-24:00"}'::jsonb
+),
+(
+    '66666666-6666-6666-6666-666666666662',
+    '55555555-5555-5555-5555-555555555552',
+    'Maribor Center Locker Station',
+    '{"monday":"06:00-22:00","tuesday":"06:00-22:00","wednesday":"06:00-22:00","thursday":"06:00-22:00","friday":"06:00-22:00","saturday":"08:00-20:00","sunday":"08:00-20:00"}'::jsonb
+);
+
+INSERT INTO lockers (
+    id,
+    station_id,
+    box_number,
+    max_weight_kg,
+    max_length_cm,
+    max_width_cm,
+    max_height_cm,
+    available,
+    last_maintenance
+) VALUES
+(
+    '77777777-7777-7777-7777-777777777771',
+    '66666666-6666-6666-6666-666666666661',
+    1,
+    10.0,
+    45.0,
+    35.0,
+    25.0,
+    true,
+    '2026-05-01'
+),
+(
+    '77777777-7777-7777-7777-777777777772',
+    '66666666-6666-6666-6666-666666666661',
+    2,
+    25.0,
+    80.0,
+    50.0,
+    50.0,
+    true,
+    '2026-05-01'
+),
+(
+    '77777777-7777-7777-7777-777777777773',
+    '66666666-6666-6666-6666-666666666662',
+    1,
+    5.0,
+    35.0,
+    25.0,
+    20.0,
+    false,
+    '2026-04-15'
 );

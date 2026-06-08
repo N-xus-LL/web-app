@@ -2,9 +2,11 @@ package nexus.routes
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.receive
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -15,8 +17,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import nexus.api.model.LocationRequest
 import nexus.database.toResponse
-import nexus.database.toLocation
 import nexus.database.LocationEntity
+import nexus.database.toEntity
 import nexus.repository.LocationRepository
 import java.util.UUID
 
@@ -70,38 +72,20 @@ fun Route.locationRoutes() {
         }
 
         post {
-            val body = call.receiveLocationRequest()
-            val entity = LocationEntity(
-                name = body.name,
-                locationType = body.locationType,
-                location = body.location,
-                source = body.source,
-                metadata = kotlinx.serialization.json.Json.encodeToString(kotlinx.serialization.json.JsonObject.serializer(), body.metadata)
-            )
-
-            val created = locationRepository.createLocation(entity)
+            val location = call.receive<LocationRequest>()
+            val created = locationRepository.createLocation(location.toEntity())
             call.respond(HttpStatusCode.Created, created.toResponse())
         }
 
         put {
-            val body = call.receiveLocationRequest()
-            // expecting id present in query or body is not defined in request; for simplicity require id in query param
-            val idParam = call.request.queryParameters["id"]
-            if (idParam == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing id query parameter")
+            val location = call.receive<LocationRequest>()
+
+            if (location.id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid location id")
                 return@put
             }
 
-            val entity = LocationEntity(
-                id = UUID.fromString(idParam),
-                name = body.name,
-                locationType = body.locationType,
-                location = body.location,
-                source = body.source,
-                metadata = kotlinx.serialization.json.Json.encodeToString(kotlinx.serialization.json.JsonObject.serializer(), body.metadata)
-            )
-
-            val updated = locationRepository.updateLocation(entity)
+            val updated = locationRepository.updateLocation(location.toEntity())
             if (updated) call.respond(HttpStatusCode.OK, "Location updated")
             else call.respond(HttpStatusCode.NotFound, "Location not found")
         }
@@ -119,6 +103,7 @@ fun Route.locationRoutes() {
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 private suspend fun ApplicationCall.receiveLocationRequest(): LocationRequest {
     val text = receiveText()
     val json = Json {
