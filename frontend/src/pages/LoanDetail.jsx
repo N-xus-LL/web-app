@@ -121,11 +121,19 @@ const LoanDetail = ({ currentUser }) => {
         outputMode: "app"
       });
 
-      // Parse coordinates out of GeoJSON feature collection payload response
-      if (result?.features?.[0]?.geometry?.coordinates) {
-        const [lon, lat] = result.features[0].geometry.coordinates;
-        setMeetingPoint({ lat, lon });
-      }
+      // Parse the GeoJSON response
+      const parsed = dslService.parsePointsFromResponse(
+          result, 
+          currentUserId, 
+          lenderId, 
+          borrowerId
+      );
+      
+      setMeetingPoint(parsed.meetingPoint);
+      
+      // Optionally store the full response for debugging
+      console.log("DSL Response: ", { result, parsed });
+
     } catch (err) {
       console.error("DSL Calculation failed", err);
     } finally {
@@ -145,18 +153,31 @@ const LoanDetail = ({ currentUser }) => {
   const handleAcceptTerms = async () => {
     setSaving("approve");
     try {
-      await loanService.updateLoan(loanId, { status: LoanStatus.Active.value });
+      // First, store the meeting point in the loan record
+      await loanService.updateLoan(loanId, { 
+          status: LoanStatus.Active.value,
+          meeting_point_lat: meetingPoint?.lat,
+          meeting_point_lon: meetingPoint?.lon,
+          meeting_point_strategy: selectedStrategy,
+          meeting_point_data: JSON.stringify(meetingPoint) // Store full data
+      });
+      
       if (itemId) {
-        await setItemAvailability(itemId, false);
+          await setItemAvailability(itemId, false);
       }
+      
       setIsTermsModalOpen(false);
       
-      // Pass the generated DSL meeting point coordinates to the main /map viewport via location state
+      // Navigate to map with meeting point info
       navigate("/map", { 
-        state: { 
-          items: itemDetails ? [itemDetails] : [],
-          circle: meetingPoint ? { lat: meetingPoint.lat, lon: meetingPoint.lon, radius: 150 } : null
-        } 
+          state: { 
+              items: itemDetails ? [itemDetails] : [],
+              meetingPoint: meetingPoint,
+              loanId: loanId,
+              showMeetingPoint: true,
+              isLender: isLender,
+              isBorrower: isBorrower
+          } 
       });
     } catch (requestError) {
       setError(requestError.message || "Failed to accept borrowing terms");
@@ -165,8 +186,35 @@ const LoanDetail = ({ currentUser }) => {
     }
   };
 
-  const handleProposeNewTerms = () => {
-    alert("New terms framework notified. Strategy updated locally for adjustments.");
+  const handleProposeNewTerms = async () => {
+      if (!meetingPoint) {
+          setError("Please calculate a meeting point first");
+          return;
+      }
+
+      setSaving("propose");
+      setError("");
+      
+      try {
+          // Store the proposed meeting point in the loan record
+          await loanService.updateLoan(loanId, { 
+              status: LoanStatus.TermsProposed.value,
+              proposed_meeting_point_lat: meetingPoint.lat,
+              proposed_meeting_point_lon: meetingPoint.lon,
+              proposed_meeting_point_strategy: selectedStrategy,
+              proposed_meeting_point_data: JSON.stringify(meetingPoint),
+              proposed_by: "lender",
+              proposed_at: new Date().toISOString()
+          });
+          
+          setMessage("Borrowing terms proposed successfully. Waiting for borrower to review.");
+          setIsTermsModalOpen(false);
+          await loadLoan(); // Reload to reflect new status
+      } catch (requestError) {
+          setError(requestError.message || "Failed to propose borrowing terms");
+      } finally {
+          setSaving("");
+      }
   };
 
   const handleApprove = async () => {

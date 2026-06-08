@@ -49,5 +49,50 @@ const executeDslQuery = async (params) => {
     return response.json();
 };
 
-const dslService = { executeDslQuery, generateDslScript };
+// Helper to parse points from DSL response
+const parsePointsFromResponse = (geojson, currentUserId, lenderId, borrowerId) => {
+    if (!geojson?.features) return { meetingPoint: null, userPoint: null, otherPartyPoint: null };
+    
+    let meetingPoint    = null;
+    let userPoint       = null;
+    let otherPartyPoint = null;
+    
+    geojson.features.forEach(feature => {
+        const coordinates = feature.geometry.coordinates;
+        const [lon, lat] = coordinates;
+        const props = feature.properties || {};
+        
+        // Meeting point could be a locker or a calculated point
+        if (props.kind === 'locker' || (props.role === 'meeting' || props.kind === 'meeting')) {
+            meetingPoint = { lat, lon, ...props };
+        }
+        
+        // Lender point
+        else if (props.role === 'lender') {
+            if (currentUserId === lenderId) {
+                userPoint = { lat, lon, role: 'lender', ...props };
+            } else {
+                otherPartyPoint = { lat, lon, role: 'lender', ...props };
+            }
+        }
+
+        // Borrower point
+        else if (props.role === 'borrower') {
+            if (currentUserId === borrowerId) {
+                userPoint = { lat, lon, role: 'borrower', ...props };
+            } else {
+                otherPartyPoint = { lat, lon, role: 'borrower', ...props };
+            }
+        }
+    });
+    
+    return { meetingPoint, userPoint, otherPartyPoint };
+};
+
+const dslService = { 
+    executeDslQuery, 
+    generateDslScript,
+    parsePointsFromResponse
+};
+
 export default dslService;

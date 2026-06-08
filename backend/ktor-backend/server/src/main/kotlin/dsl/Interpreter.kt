@@ -30,10 +30,10 @@ data class Locker(
     val id: String,
     val station: LockerStation,
     val boxNumber: Int,
-    val maxWeightKg: Double,
-    val maxLengthCm: Double,
-    val maxWidthCm: Double,
-    val maxHeightCm: Double,
+    val maxWeight: Double,
+    val maxLength: Double,
+    val maxWidth: Double,
+    val maxHeight: Double,
     val available: Boolean,
 
     // Mutable fields evaluated dynamically by the interpreter pipeline
@@ -95,8 +95,8 @@ class Interpreter(
         val referenceRadius = search.finalRadius
 
         return when (mode) {
-            "debug" -> GeoJsonExporter.exportDebug(lender, borrower, referencePoint, lockers, referenceRadius)
-            else -> GeoJsonExporter.exportApp(lender, borrower, referencePoint, lockers, referenceRadius)
+            "debug" -> GeoJsonExporter.exportDebug(lender, borrower, lockers, referencePoint, referenceRadius)
+            else -> GeoJsonExporter.exportApp(lender, borrower, selectedLocker!!)
         }
     }
 
@@ -310,7 +310,7 @@ class Interpreter(
     // Finding closest candidate locker
     private fun findClosestMatch() {
         selectedLocker = lockersMatching.minByOrNull { locker ->
-            val volume = locker.maxLengthCm * locker.maxWidthCm * locker.maxHeightCm
+            val volume = locker.maxLength * locker.maxWidth * locker.maxHeight
             val normalizedDistance = locker.distance / lockersMatching.maxOf { it.distance }
             val normalizedVolume = volume / lockersMatching.maxOf { volume }
 
@@ -329,10 +329,10 @@ class Interpreter(
     }
 
     private fun lockerFitsItem(locker: Locker): Boolean {
-        return locker.maxWeightKg >= item.weight &&
-                locker.maxLengthCm >= item.length &&
-                locker.maxWidthCm >= item.width &&
-                locker.maxHeightCm >= item.height
+        return locker.maxWeight >= item.weight &&
+                locker.maxLength >= item.length &&
+                locker.maxWidth >= item.width &&
+                locker.maxHeight >= item.height
     }
 
     // Haversine geospatial calculation

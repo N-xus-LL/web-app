@@ -6,11 +6,11 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import dsl.Interpreter
+import nexus.dsl.Interpreter
 import nexus.dsl.Lexer
 import nexus.dsl.OutputModeDirective
 import nexus.dsl.Parser
-import dsl.RuntimeError
+import nexus.dsl.RuntimeError
 import nexus.dsl.SemanticAnalyzer
 import nexus.dsl.SemanticError
 import nexus.dsl.SyntaxError

@@ -1,8 +1,8 @@
 package nexus.repository
 
-import dsl.Location
-import dsl.Locker
-import dsl.LockerStation
+import nexus.dsl.Location
+import nexus.dsl.Locker
+import nexus.dsl.LockerStation
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.sql.Connection
@@ -53,10 +53,10 @@ class DslRepository {
                         id = rs.getObject("locker_id").toString(),
                         station = station,
                         boxNumber = rs.getInt("box_number"),
-                        maxWeightKg = rs.getDouble("max_weight"),
-                        maxLengthCm = rs.getDouble("max_length"),
-                        maxWidthCm = rs.getDouble("max_width"),
-                        maxHeightCm = rs.getDouble("max_height"),
+                        maxWeight = rs.getDouble("max_weight"),
+                        maxLength = rs.getDouble("max_length"),
+                        maxWidth = rs.getDouble("max_width"),
+                        maxHeight = rs.getDouble("max_height"),
                         available = rs.getBoolean("available")
                     )
                 }

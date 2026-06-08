@@ -15,22 +15,14 @@ object GeoJsonExporter {
     fun exportApp(
         lender: LenderBlock,
         borrower: BorrowerBlock,
-        referencePoint: Pair<Double, Double>,
-        lockers: List<Locker>,
-        referenceRadiusMeters: Double
+        selectedLocker: Locker,
     ): JsonObject {
-        val visibleLockers = lockers
-            .filter { it.isSelected }
-            .sortedBy { it.distance }
-
         // For app mode, selected locker will be the only one in visibleLockers
         return featureCollection(
             buildList {
                 add(userFeature("lender", lender.lat, lender.lon))
                 add(userFeature("borrower", borrower.lat, borrower.lon))
-                add(referenceFeature(referencePoint))
-                add(referenceCircleFeature(referencePoint, referenceRadiusMeters))
-                addAll(visibleLockers.map { lockerFeature(it, includeDebugProperties = false) })
+                add(lockerFeature(selectedLocker, includeDebugProperties = false))
             }
         )
     }
@@ -38,9 +30,9 @@ object GeoJsonExporter {
     fun exportDebug(
         lender: LenderBlock,
         borrower: BorrowerBlock,
-        referencePoint: Pair<Double, Double>,
         lockers: List<Locker>,
-        referenceRadiusMeters: Double
+        referencePoint: Pair<Double, Double>,
+        referenceRadius: Double
     ): JsonObject {
         // Separate selected locker from others
         val selectedLocker = lockers.find { it.isSelected }
@@ -51,7 +43,7 @@ object GeoJsonExporter {
             add(userFeature("lender", lender.lat, lender.lon))
             add(userFeature("borrower", borrower.lat, borrower.lon))
             add(referenceFeature(referencePoint))
-            add(referenceCircleFeature(referencePoint, referenceRadiusMeters))
+            add(referenceCircleFeature(referencePoint, referenceRadius))
 
             // Add selected locker first so it renders on top
             if (selectedLocker != null) {
@@ -204,10 +196,10 @@ object GeoJsonExporter {
                 put("marker-size", if (locker.isSelected) "large" else "medium")
 
                 if (includeDebugProperties) {
-                    put("max_weight_kg", locker.maxWeightKg)
-                    put("max_length_cm", locker.maxLengthCm)
-                    put("max_width_cm", locker.maxWidthCm)
-                    put("max_height_cm", locker.maxHeightCm)
+                    put("max_weight", locker.maxWeight)
+                    put("max_length", locker.maxLength)
+                    put("max_width", locker.maxWidth)
+                    put("max_height", locker.maxHeight)
                 }
             }
         )
