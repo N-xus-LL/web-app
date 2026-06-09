@@ -24,6 +24,9 @@ fun Application.configureRouting() {
         get("/") {
             call.respondText("Hello, World!")
         }
+        get("/health") {
+            call.respond(mapOf("status" to "ok"))
+        }
         get<Articles> { article ->
             // Get all articles ...
             call.respond("List of articles sorted starting from ${article.sort}")
