@@ -91,10 +91,11 @@ export const setItemAvailability = async (itemId, available) => {
 
 export const updateItemAfterReturn = async (itemId, conditionId) => {
   const item = await itemService.getItem(itemId);
-  await itemService.updateItem(
-    buildItemUpdatePayload(item, {
-      available: true,
-      condition_id: conditionId
-    })
-  );
+  const updates = { available: true };
+
+  if (conditionId) {
+    updates.condition_id = conditionId;
+  }
+
+  await itemService.updateItem(buildItemUpdatePayload(item, updates));
 };

@@ -361,7 +361,7 @@ const MapPage = () => {
 
       {/* NEW: Show active meetings count in a banner */}
       {activeMeetings.length > 0 && (
-        <div className="alert alert-info" style={{ backgroundColor: "#e3f2fd", marginBottom: "12px" }}>
+        <div className="alert alert-info" style={{ marginBottom: "12px" }}>
           <strong>Active Meeting Points:</strong> {activeMeetings.length} loan{activeMeetings.length !== 1 ? 's' : ''} with proposed meeting locations.
           {activeMeetings.some(m => !m.confirmed) && " (Click on pins for details)"}
         </div>

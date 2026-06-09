@@ -361,13 +361,21 @@ const LoanDetail = ({ currentUser }) => {
     setError("");
     
     try {
+      const conditionOnReturn =
+        returnCondition ||
+        loan?.condition_on_return_id ||
+        loan?.conditionOnReturnId ||
+        itemDetails?.condition_id ||
+        itemDetails?.conditionId;
+
       // Mark loan as completed and update item condition
       await loanService.updateLoan(loanId, { 
-          status: LoanStatus.Completed.value
+          status: LoanStatus.Completed.value,
+          ...(conditionOnReturn ? { condition_on_return_id: conditionOnReturn } : {})
       });
       
-      if (itemId && loan?.condition_on_return_id) {
-          await updateItemAfterReturn(itemId, loan.condition_on_return_id);
+      if (itemId) {
+          await updateItemAfterReturn(itemId, conditionOnReturn);
       }
       
       setMessage("Return confirmed! Item condition updated and listed as available.");

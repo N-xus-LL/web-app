@@ -216,7 +216,7 @@ const ItemForm = ({ currentUser }) => {
   };
 
   return (
-    <section className="page-section">
+    <section className="page-section" id="page-item-section">
       <div className="page-heading page-heading-row">
         <div>
           <p className="eyebrow">Inventory</p>
