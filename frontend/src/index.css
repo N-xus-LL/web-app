@@ -1553,6 +1553,7 @@ display: flex;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--bg-surface);
+  box-sizing: content-box;
   padding: 22px;
   box-shadow: var(--shadow-card);
   display: flex;
@@ -1560,6 +1561,7 @@ display: flex;
   gap: 12px;
   align-items: center;
   height: 460px;
+  /* justify-content: space-evenly; */
 }
 
 .chart-title {
@@ -1575,6 +1577,7 @@ display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
+  height: 350px;
 }
 
 .chart-empty {
