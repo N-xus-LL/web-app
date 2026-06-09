@@ -14,7 +14,7 @@ export const damagePolicyOptions = [
 
 export const LoanStatus = {
   BorrowingRequested: { value: "borrowing_requested", label: "Borrowing Requested" },
-  TermsProposed: { value: "terms_proposed", label: "Terms Proposed" },
+  // TermsProposed: { value: "terms_proposed", label: "Terms Proposed" },
   AwaitingPickup: { value: "awaiting_pickup", label: "Ready for Pickup" },
   Active: { value: "active", label: "Item Borrowed" },
   Returned: { value: "returned", label: "Returned" },
@@ -26,7 +26,7 @@ export const loanStatusOptions = Object.values(LoanStatus);
 
 export const BlockingLoanStatuses = [
   LoanStatus.BorrowingRequested.value,
-  LoanStatus.TermsProposed.value,
+  // LoanStatus.TermsProposed.value,
   LoanStatus.AwaitingPickup.value,
   LoanStatus.Active.value,
   LoanStatus.Returned.value

@@ -42,10 +42,11 @@ const LoanDetail = ({ currentUser }) => {
   // Terms & Modal States
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState("midpoint");
+  const [lenderPoint, setLenderPoint]     = useState({ lat: 46.559, lon: 15.638 });
   const [borrowerPoint, setBorrowerPoint] = useState({ lat: 46.562, lon: 15.642 });
-  const [meetingPoint, setMeetingPoint] = useState(null);
-  const [lenderPoint, setLenderPoint] = useState({ lat: 46.559, lon: 15.638 });
+  const [meetingPoint, setMeetingPoint]   = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
 
   const loadLoan = async () => {
     setLoading(true);
@@ -95,6 +96,43 @@ const LoanDetail = ({ currentUser }) => {
   const canView = isLender || isBorrower;
 
 
+
+  const getUserCurrentLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          };
+          
+          console.log("Got user location:", userLocation);
+          
+          if (isLender) {
+            setLenderPoint(userLocation);
+          } else if (isBorrower) {
+            setBorrowerPoint(userLocation);
+          }
+        },
+        (error) => {
+          console.warn("Could not get user location:", error);
+          // Keep default coordinates - they're already set
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    }
+  };
+
+  // Update the modal opening handler
+  const openTermsModal = () => {
+    getUserCurrentLocation();   // Get fresh location when opening
+    setIsTermsModalOpen(true);
+  };
+
   // DSL Evaluation Trigger
   const calculateMeetingPoint = async (strategyName) => {
 
@@ -129,17 +167,66 @@ const LoanDetail = ({ currentUser }) => {
           borrowerId
       );
       
-      setMeetingPoint(parsed.meetingPoint);
+      // Update meeting point
+      if (parsed.meetingPoint) {
+          setMeetingPoint(parsed.meetingPoint);
+      }
+      
+      // Update user's own point (if returned)
+      if (parsed.userPoint) {
+          if (isLender) {
+              setLenderPoint(parsed.userPoint);
+          } else if (isBorrower) {
+              setBorrowerPoint(parsed.userPoint);
+          }
+      }
+      
+      // Update the other party's point (if returned)
+      if (parsed.otherPartyPoint) {
+          if (isLender) {
+              setBorrowerPoint(parsed.otherPartyPoint);
+          } else if (isBorrower) {
+              setLenderPoint(parsed.otherPartyPoint);
+          }
+      }
       
       // Optionally store the full response for debugging
       console.log("DSL Response: ", { result, parsed });
 
     } catch (err) {
       console.error("DSL Calculation failed", err);
+      setError("Failed to calculate meeting point. Please try again.");
     } finally {
       setPreviewLoading(false);
     }
   };
+
+  useEffect(() => {
+  if (meetingPoint && loanId) {
+    console.log("🔔 Dispatching meetingPointUpdated event:", {
+      loanId,
+      meetingPoint,
+      lenderPoint,
+      borrowerPoint
+    });
+    
+    // Dispatch event for the map to pick up
+    const event = new CustomEvent('meetingPointUpdated', {
+      detail: {
+        loanId,
+        meetingPoint,
+        lenderPoint,
+        borrowerPoint,
+        strategy: selectedStrategy,
+        isLender,
+        isBorrower,
+        lenderId,
+        borrowerId
+      }
+    });
+    window.dispatchEvent(event);
+  }
+}, [meetingPoint, loanId, lenderPoint, borrowerPoint, selectedStrategy]);
 
   // Trigger preview recalculations whenever the strategy selector flips
   useEffect(() => {
@@ -149,73 +236,135 @@ const LoanDetail = ({ currentUser }) => {
   }, [isTermsModalOpen, selectedStrategy]);
 
 
-  // Action Button Handlers
-  const handleAcceptTerms = async () => {
-    setSaving("approve");
+  const handleProposeAndConfirmTerms = async () => {
+    if (!meetingPoint) {
+      setError("Please calculate a meeting point first");
+      return;
+    }
+
+    setSaving("propose");
+    setError("");
+    
     try {
-      // First, store the meeting point in the loan record
+      // Store meeting point in loan metadata - DON'T nest it, merge properly
+      const currentMetadata = loan?.metadata || {};
+      const updatedMetadata = {
+          ...currentMetadata,
+          meeting_point: meetingPoint,
+          meeting_strategy: selectedStrategy,
+          lender_point: lenderPoint,
+          borrower_point: borrowerPoint,
+          proposed_at: new Date().toISOString()
+      };
+
+      // Only send the fields that need updating
       await loanService.updateLoan(loanId, { 
-          status: LoanStatus.Active.value,
-          meeting_point_lat: meetingPoint?.lat,
-          meeting_point_lon: meetingPoint?.lon,
-          meeting_point_strategy: selectedStrategy,
-          meeting_point_data: JSON.stringify(meetingPoint) // Store full data
+          status: LoanStatus.AwaitingPickup.value,
+          metadata: updatedMetadata
       });
+
+      // Dispatch event to keep meeting point on map after confirmation
+      const event = new CustomEvent('meetingPointConfirmed', {
+        detail: {
+          loanId,
+          meetingPoint,
+          lenderPoint,
+          borrowerPoint,
+          strategy: selectedStrategy,
+          status: LoanStatus.AwaitingPickup.value
+        }
+      });
+      window.dispatchEvent(event);
       
-      if (itemId) {
-          await setItemAvailability(itemId, false);
-      }
-      
+      setMessage("Borrowing terms confirmed! The borrower can now pick up the item.");
       setIsTermsModalOpen(false);
-      
-      // Navigate to map with meeting point info
-      navigate("/map", { 
-          state: { 
-              items: itemDetails ? [itemDetails] : [],
-              meetingPoint: meetingPoint,
-              loanId: loanId,
-              showMeetingPoint: true,
-              isLender: isLender,
-              isBorrower: isBorrower
-          } 
-      });
+      await loadLoan(); // Reload to reflect new status
     } catch (requestError) {
-      setError(requestError.message || "Failed to accept borrowing terms");
+      setError(requestError.message || "Failed to confirm borrowing terms");
     } finally {
       setSaving("");
     }
   };
 
-  const handleProposeNewTerms = async () => {
-      if (!meetingPoint) {
-          setError("Please calculate a meeting point first");
-          return;
-      }
-
-      setSaving("propose");
-      setError("");
+  const handleConfirmPickup = async () => {
+    setSaving("pickup");
+    setError("");
+    
+    try {
+      // First update loan status
+      await loanService.updateLoan(loanId, { 
+          status: LoanStatus.Active.value,
+          start_date: new Date().toISOString()
+      });
       
-      try {
-          // Store the proposed meeting point in the loan record
-          await loanService.updateLoan(loanId, { 
-              status: LoanStatus.TermsProposed.value,
-              proposed_meeting_point_lat: meetingPoint.lat,
-              proposed_meeting_point_lon: meetingPoint.lon,
-              proposed_meeting_point_strategy: selectedStrategy,
-              proposed_meeting_point_data: JSON.stringify(meetingPoint),
-              proposed_by: "lender",
-              proposed_at: new Date().toISOString()
-          });
-          
-          setMessage("Borrowing terms proposed successfully. Waiting for borrower to review.");
-          setIsTermsModalOpen(false);
-          await loadLoan(); // Reload to reflect new status
-      } catch (requestError) {
-          setError(requestError.message || "Failed to propose borrowing terms");
-      } finally {
-          setSaving("");
+      // Then mark item as unavailable
+      if (itemId) {
+          await setItemAvailability(itemId, false);
       }
+      
+      setMessage("Item pickup confirmed! Your loan is now active.");
+      await loadLoan();
+    } catch (requestError) {
+      console.error("Pickup confirmation failed:", requestError);
+      setError(requestError.message || "Failed to confirm pickup");
+    } finally {
+      setSaving("");
+    }
   };
+
+  const handleConfirmReturn = async (event) => {
+    event.preventDefault();
+
+    if (!returnCondition) {
+      setError("Select the item condition on return.");
+      return;
+    }
+
+    setSaving("confirm");
+    setError("");
+    setMessage("");
+
+    try {
+        // Mark as returned (waiting for lender confirmation)
+        await loanService.updateLoan(loanId, { 
+            status: LoanStatus.Returned.value,
+            actual_return_date: new Date().toISOString(),
+            condition_on_return_id: returnCondition
+        });
+        
+        setMessage("Return submitted. Waiting for lender to confirm.");
+        await loadLoan();
+    } catch (requestError) {
+      console.error("Return submission failed:", requestError);
+      setError(requestError.message || "Failed to submit return");
+    } finally {
+      setSaving("");
+    }
+  };
+
+  const handleLenderConfirmReturn = async () => {
+    setSaving("confirm_return");
+    setError("");
+    
+    try {
+      // Mark loan as completed and update item condition
+      await loanService.updateLoan(loanId, { 
+          status: LoanStatus.Completed.value
+      });
+      
+      if (itemId && loan?.condition_on_return_id) {
+          await updateItemAfterReturn(itemId, loan.condition_on_return_id);
+      }
+      
+      setMessage("Return confirmed! Item condition updated and listed as available.");
+      await loadLoan();
+    } catch (requestError) {
+      setError(requestError.message || "Failed to confirm return");
+    } finally {
+      setSaving("");
+    }
+  };
+
 
   const handleApprove = async () => {
     setSaving("approve");
@@ -272,7 +421,7 @@ const LoanDetail = ({ currentUser }) => {
     }
   };
 
-  const handleConfirmReturn = async (event) => {
+  /* const handleConfirmReturn = async (event) => {
     event.preventDefault();
 
     if (!returnCondition) {
@@ -296,7 +445,7 @@ const LoanDetail = ({ currentUser }) => {
     } finally {
       setSaving("");
     }
-  };
+  }; */
 
   const handleCancelRequest = async () => {
     if (!window.confirm("Cancel your borrow request?")) {
@@ -393,48 +542,42 @@ const LoanDetail = ({ currentUser }) => {
 
           <div className="button-row">
 
-            {status === LoanStatus.TermsProposed.value && (
-              <button
-                className="primary-button small-button"
-                type="button"
-                onClick={() => setIsTermsModalOpen(true)}
-              >
-                Review Terms
-              </button>
-            )}
-
-            {isLender 
-            && status === LoanStatus.BorrowingRequested.value && (
-              <>
+            {/* Lender: Propose terms (only in BorrowingRequested) */}
+            {isLender && status === LoanStatus.BorrowingRequested.value && (
                 <button
-                  className="primary-button small-button"
-                  type="button"
-                  onClick={() => setIsTermsModalOpen(true)}
+                    className="primary-button small-button"
+                    type="button"
+                    onClick={openTermsModal}
                 >
-                  Propose Borrowing Terms
+                    Propose Meeting Point
                 </button>
-                <button
-                  className="danger-button small-button"
-                  disabled={Boolean(saving)}
-                  type="button"
-                  onClick={handleReject}
-                >
-                  {saving === "reject" ? "Rejecting Borrowing Request..." : "Reject Borrowing Request"}
-                </button>
-              </>
             )}
-
+            
+            {/* Borrower: Confirm pickup (when awaiting pickup) */}
+            {isBorrower && status === LoanStatus.AwaitingPickup.value && (
+                <button
+                    className="primary-button small-button"
+                    disabled={Boolean(saving)}
+                    type="button"
+                    onClick={handleConfirmPickup}
+                >
+                    {saving === "pickup" ? "Confirming..." : "Confirm Item Pickup"}
+                </button>
+            )}
+            
+            {/* Borrower: Mark as returned (when active) */}
             {isBorrower && status === LoanStatus.Active.value && (
-              <button
-                className="primary-button small-button"
-                disabled={Boolean(saving)}
-                type="button"
-                onClick={handleMarkReturned}
-              >
-                {saving === "return" ? "Marking Item as Returned..." : "Mark Item as Returned"}
-              </button>
+                <button
+                    className="primary-button small-button"
+                    disabled={Boolean(saving)}
+                    type="button"
+                    onClick={handleMarkReturned}
+                >
+                    {saving === "return" ? "Marking..." : "Mark Item as Returned"}
+                </button>
             )}
-
+            
+            {/* Borrower: Cancel button (when not after picked-up) */}
             {(isBorrower 
               && status !== LoanStatus.Active.value
               && status !== LoanStatus.Returned.value 
@@ -455,7 +598,7 @@ const LoanDetail = ({ currentUser }) => {
           {isLender && status === LoanStatus.Returned.value && (
             <form className="resource-panel form-card return-confirm-panel" onSubmit={handleConfirmReturn}>
               <div className="panel-heading">
-                <h2>Confirm return</h2>
+                <h2>Confirm Return</h2>
               </div>
               <p className="return-confirm-copy">
                 Check the item and record its' condition before marking it available again.
@@ -470,7 +613,7 @@ const LoanDetail = ({ currentUser }) => {
                     value={returnCondition}
                     onChange={(event) => setReturnCondition(event.target.value)}
                   >
-                    <option value="">Select condition</option>
+                    <option value="">Select Condition</option>
                     {itemConditionOptions.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -479,8 +622,14 @@ const LoanDetail = ({ currentUser }) => {
                   </select>
                 </div>
               </div>
-              <button className="primary-button" disabled={Boolean(saving)} type="submit">
-                {saving === "confirm" ? "Confirming..." : "Confirm return"}
+              {/* Lender: Confirm return (when returned) */}
+              <button
+                className="primary-button small-button"
+                disabled={Boolean(saving)}
+                type="button"
+                onClick={handleLenderConfirmReturn}
+              >
+                {saving === "confirm_return" ? "Confirming..." : "Confirm Item Return"}
               </button>
             </form>
           )}
@@ -526,41 +675,64 @@ const LoanDetail = ({ currentUser }) => {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 
-                {/* Visualizing coordinates returned by the DSL parser script */}
+                {/* Show all points from DSL response */}
+                {/* Lender Point */}
                 {lenderPoint && (
-                  <Marker position={[lenderPoint.lat, lenderPoint.lon]} icon={createPinIcon("#0087CC")}>
-                    <Popup>Lender Point</Popup>
-                  </Marker>
+                    <Marker position={[lenderPoint.lat, lenderPoint.lon]} icon={createPinIcon("#0087CC")}>
+                        <Popup>
+                            <strong>{isLender ? "Your Location" : "Lender's Location"}</strong>
+                        </Popup>
+                    </Marker>
                 )}
-                {meetingPoint && (
-                  <Marker position={[meetingPoint.lat, meetingPoint.lon]} icon={createPinIcon("#00babe")}>
-                    <Popup>Proposed Meeting Point ({selectedStrategy})</Popup>
-                  </Marker>
-                )}
+
+                {/* Borrower Point */}
                 {borrowerPoint && (
-                  <Marker position={[borrowerPoint.lat, borrowerPoint.lon]} icon={createPinIcon("#72E57C")}>
-                    <Popup>Lender Point</Popup>
-                  </Marker>
+                    <Marker position={[borrowerPoint.lat, borrowerPoint.lon]} icon={createPinIcon("#72E57C")}>
+                        <Popup>
+                            <strong>{isBorrower ? "Your Location" : "Borrower's Location"}</strong>
+                        </Popup>
+                    </Marker>
+                )}
+
+                {/* Meeting Point / Locker */}
+                {meetingPoint && (
+                    <Marker position={[meetingPoint.lat, meetingPoint.lon]} icon={createPinIcon("#00babe")}>
+                        <Popup>
+                            <strong>Meeting Point</strong>
+                            {meetingPoint.address && 
+                              <>
+                                <br />{meetingPoint.address}
+                              </>
+                            }
+                            {meetingPoint.box_number && 
+                              <>
+                                <br />Locker Box <strong>#{meetingPoint.box_number}</strong>
+                              </>
+                            }
+                            <br />
+                            <em>Strategy: {selectedStrategy}</em>
+                        </Popup>
+                    </Marker>
                 )}
               </MapContainer>
             </div>
 
-            {/* Action Directives Layout */}
+            {/* Action Directives Layout - Simplified */}
             <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-              {isBorrower && (
-                <button className="primary-button" onClick={handleAcceptTerms} disabled={previewLoading || Boolean(saving)}>
-                  Accept Terms
+                {isLender && (
+                    <button 
+                        className="primary-button" 
+                        onClick={handleProposeAndConfirmTerms} 
+                        disabled={previewLoading || Boolean(saving)}
+                    >
+                        {saving === "propose" ? "Confirming..." : "Confirm Meeting Point"}
+                    </button>
+                )}
+                <button className="secondary-button" onClick={() => setIsTermsModalOpen(false)}>
+                    Cancel
                 </button>
-              )}
-              {isLender && (
-                <button className="primary-button" onClick={handleProposeNewTerms} disabled={previewLoading}>
-                  Propose Borrowing Terms
-                </button>
-              )}
-              <button className="secondary-button" onClick={() => setIsTermsModalOpen(false)}>
-                Close Preview
-              </button>
             </div>
+
           </div>
         </div>
       )}
@@ -588,7 +760,7 @@ const modalOverlayStyle = {
 };
 
 const modalCardStyle = {
-  backgroundColor: "var(--bg-surface);",
+  backgroundColor: "var(--bg-surface)",
   padding: "24px",
   border: "1px solid var(--border-input)",
   borderRadius: "8px",

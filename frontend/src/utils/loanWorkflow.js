@@ -18,13 +18,22 @@ export const getWorkflowSteps = (status) => {
     (step) => step.value !== LoanStatus.Cancelled.value
   );
 
-  const activeIndexByStatus = {
+  /* const activeIndexByStatus = {
     [LoanStatus.BorrowingRequested.value]: 0,
     [LoanStatus.TermsProposed.value]: 1,
     [LoanStatus.AwaitingPickup.value]: 2,
     [LoanStatus.Active.value]: 3,
     [LoanStatus.Returned.value]: 4,
     [LoanStatus.Completed.value]: 5,
+    [LoanStatus.Cancelled.value]: -1
+  }; */
+
+  const activeIndexByStatus = {
+    [LoanStatus.BorrowingRequested.value]: 0,
+    [LoanStatus.AwaitingPickup.value]: 1,
+    [LoanStatus.Active.value]: 2,
+    [LoanStatus.Returned.value]: 3,
+    [LoanStatus.Completed.value]: 4,
     [LoanStatus.Cancelled.value]: -1
   };
 
