@@ -352,19 +352,19 @@ const ItemForm = ({ currentUser }) => {
           <div className="form-grid four-columns">
             <div className="field">
               <label htmlFor="weight">Weight</label>
-              <input id="weight" name="weight" required value={form.weight} onChange={handleChange} />
+              <input id="weight" name="weight" type="number" required value={form.weight} onChange={handleChange} />
             </div>
             <div className="field">
               <label htmlFor="length">Length</label>
-              <input id="length" name="length" required value={form.length} onChange={handleChange} />
+              <input id="length" name="length" type="number" required value={form.length} onChange={handleChange} />
             </div>
             <div className="field">
               <label htmlFor="height">Height</label>
-              <input id="height" name="height" required value={form.height} onChange={handleChange} />
+              <input id="height" name="height" type="number" required value={form.height} onChange={handleChange} />
             </div>
             <div className="field">
               <label htmlFor="width">Width</label>
-              <input id="width" name="width" required value={form.width} onChange={handleChange} />
+              <input id="width" name="width" type="number" required value={form.width} onChange={handleChange} />
             </div>
           </div>
 
