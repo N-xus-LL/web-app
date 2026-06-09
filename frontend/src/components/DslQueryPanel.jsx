@@ -1,6 +1,7 @@
 // components/DslQueryPanel.jsx
 import React, { useState, useEffect } from "react";
 import geocodingService from "../services/geocodingService";
+import dslService from "../services/dslService";
 import itemService from "../services/itemService";
 import loanService from "../services/loanService";
 
@@ -97,10 +98,18 @@ const DslQueryPanel = (
     const handleUseCurrentLocation = async (type) => {
         try {
             const position = await geocodingService.getCurrentPosition();
+            let address = "";
+
+            try {
+                address = await geocodingService.reverseGeocode(position.latitude, position.longitude);
+            } catch {
+                address = "Current Location";
+            }
+
             const locationUpdate = {
                 lat: position.latitude,
                 lon: position.longitude,
-                address: "Current Location"
+                address
             };
 
             if (type === "lender") {

@@ -130,7 +130,16 @@ const ItemForm = ({ currentUser }) => {
 
     try {
       const position = await geocodingService.getCurrentPosition();
-      setCoordinates(position.latitude, position.longitude, "Current location applied.");
+      let address = "";
+
+      try {
+        address = await geocodingService.reverseGeocode(position.latitude, position.longitude);
+      } catch {
+        address = "Current location";
+      }
+
+      setAddressQuery(address);
+      setCoordinates(position.latitude, position.longitude, address || "Current location applied.");
     } catch (requestError) {
       setError(requestError.message || "Could not get your current location.");
     } finally {

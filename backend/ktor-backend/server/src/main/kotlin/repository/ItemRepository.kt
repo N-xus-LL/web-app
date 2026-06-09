@@ -216,7 +216,7 @@ class ItemRepository() {
                 weight = ?,
                 length = ?,
                 height = ?,
-                width = ?
+                width = ?,
 
                 updated_at = CURRENT_TIMESTAMP
 

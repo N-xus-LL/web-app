@@ -35,6 +35,19 @@ const MapPage = () => {
 
   const location = useLocation();
   const [pageState, setPageState] = useState(location.state);
+  const openedFromMeeting = Boolean(location.state?.activeMeeting);
+
+  useEffect(() => {
+    if (!location.state?.activeMeeting) {
+      return;
+    }
+
+    const meeting = location.state.activeMeeting;
+    setActiveMeetings((current) => {
+      const filtered = current.filter((entry) => entry.loanId !== meeting.loanId);
+      return [...filtered, meeting];
+    });
+  }, [location.state]);
 
 
 
@@ -361,7 +374,7 @@ const MapPage = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <LayersControl position="topright">
-                <LayersControl.Overlay checked name="Items">
+                <LayersControl.Overlay checked={!openedFromMeeting} name="Items">
                     <LayerGroup>
                     {!loading && items.length > 0 &&
                         filteredItems.map((item) => {
@@ -391,7 +404,7 @@ const MapPage = () => {
                     </LayerGroup>
                 </LayersControl.Overlay>
 
-                <LayersControl.Overlay checked name="Locations">
+                <LayersControl.Overlay checked={!openedFromMeeting} name="Locations">
                     <LayerGroup>
                       {locations.length > 0 &&
                            locations.map((location) => (
@@ -405,7 +418,7 @@ const MapPage = () => {
                       ))}
                     </LayerGroup>
                 </LayersControl.Overlay>
-                <LayersControl.Overlay checked name="Your Location">
+                <LayersControl.Overlay checked={!openedFromMeeting} name="Your Location">
                     <LayerGroup>
                       {currentPosition[0] != 0 && currentPosition[1] != 0 && (
                           <Marker position={currentPosition} icon={icons.redPinIcon} title={"You"}>

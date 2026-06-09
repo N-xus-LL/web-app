@@ -279,6 +279,20 @@ const LoanDetail = ({ currentUser }) => {
       setMessage("Borrowing terms confirmed! The borrower can now pick up the item.");
       setIsTermsModalOpen(false);
       await loadLoan(); // Reload to reflect new status
+      navigate("/map", {
+        state: {
+          activeMeeting: {
+            loanId,
+            meetingPoint,
+            lenderPoint,
+            borrowerPoint,
+            strategy: selectedStrategy,
+            confirmed: true,
+            status: LoanStatus.AwaitingPickup.value,
+            updatedAt: Date.now()
+          }
+        }
+      });
     } catch (requestError) {
       setError(requestError.message || "Failed to confirm borrowing terms");
     } finally {
