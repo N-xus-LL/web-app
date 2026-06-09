@@ -1452,6 +1452,16 @@ display: flex;
 }
 
 @media (max-width: 780px) {
+
+  .site-header {
+    position: static;
+}
+
+.brand{
+    display: inline-flex;           /* Make <a> a flex container */
+    align-items: center;            /* Vertical centering */
+    justify-content: center;        /* Horizontal centering */
+}
   .nav {
     min-height: auto;
     flex-direction: column;
@@ -1459,9 +1469,31 @@ display: flex;
     padding: 14px 0;
   }
 
+  .dropdown{
+    width: 100%;
+     justify-content: center;
+  }
+
+  .dropdown-button{
+    width: 100%;
+     justify-content: center;
+     width: stretch;
+  }
+  .theme-toggle {
+    width: 100%;
+     justify-content: center;
+  }
+  .nav-link {
+        width: stretch;
+            text-align: center;
+  }
+
   .nav-links {
     flex-wrap: wrap;
     justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-direction: column;
   }
 
   .hero,
