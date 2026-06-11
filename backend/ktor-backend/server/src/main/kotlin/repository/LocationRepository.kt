@@ -121,6 +121,7 @@ class LocationRepository {
             stmt.setString(5, location.address)
             stmt.setObject(6, location.source_id)
             stmt.setString(7, location.metadata)
+            stmt.setObject(8, location.id)
 
             stmt.executeQuery().use { rs -> rs.next() }
         }

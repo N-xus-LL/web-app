@@ -18,7 +18,7 @@ fun ResultSet.toLocation(): LocationEntity {
             longitude = getDouble("lon")
         ),
         address = getString("address"),
-        source_id = UUID.fromString(getString("source_id")),
+        source_id = getString("source_id"),
         metadata = getString("metadata")
     )
 }
@@ -42,7 +42,7 @@ fun LocationRequest.toEntity(): LocationEntity {
         locationType = locationType,
         location = location,
         address = address,
-        source_id = UUID.fromString(source_id),
+        source_id = source_id,
         metadata = Json.encodeToString(metadata)
     )
 }

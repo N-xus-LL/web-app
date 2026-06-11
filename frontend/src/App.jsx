@@ -20,6 +20,7 @@ import UserItems from "./pages/UserItems";
 import authService from "./services/authService";
 import themeService from "./services/themeService";
 import "./index.css";
+import { MapProvider } from "./contexts/MapContext";
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -51,27 +52,29 @@ function App() {
           theme={theme}
         />
         <main className="content">
-          <Routes>
-            <Route path="/" element={<Home currentUser={currentUser} />} />
-            <Route path="/map" element={<MapPage />} />
-            <Route path="/statistics" element={<Statistics currentUser={currentUser} />} />
-            <Route path="/items" element={<ItemManagement currentUser={currentUser} />} />
-            <Route path="/items/new" element={<ItemForm currentUser={currentUser} />} />
-            <Route path="/items/:id/edit" element={<ItemForm currentUser={currentUser} />} />
-            <Route path="/items/:id" element={<ItemDetail currentUser={currentUser} />} />
-            <Route path="/locations" element={<Locations />} />
-            <Route path="/loans" element={<Loans currentUser={currentUser} />} />
-            <Route path="/loans/:loanId" element={<LoanDetail currentUser={currentUser} />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/users/items" element={<UserItems currentUser={currentUser} />} />
-            <Route path="/users/:userId" element={<UserProfile currentUser={currentUser} />} />
-            <Route
-              path="/profile"
-              element={<Profile currentUser={currentUser} onAuthChange={handleAuthChange} />}
-            />
-            <Route path="/login" element={<Login onAuthChange={handleAuthChange} />} />
-            <Route path="/register" element={<Register />} />
-          </Routes>
+          <MapProvider>
+            <Routes>
+              <Route path="/" element={<Home currentUser={currentUser} />} />
+              <Route path="/map" element={<MapPage />} />
+              <Route path="/statistics" element={<Statistics currentUser={currentUser} />} />
+              <Route path="/items" element={<ItemManagement currentUser={currentUser} />} />
+              <Route path="/items/new" element={<ItemForm currentUser={currentUser} />} />
+              <Route path="/items/:id/edit" element={<ItemForm currentUser={currentUser} />} />
+              <Route path="/items/:id" element={<ItemDetail currentUser={currentUser} />} />
+              <Route path="/locations" element={<Locations />} />
+              <Route path="/loans" element={<Loans currentUser={currentUser} />} />
+              <Route path="/loans/:loanId" element={<LoanDetail currentUser={currentUser} />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/users/items" element={<UserItems currentUser={currentUser} />} />
+              <Route path="/users/:userId" element={<UserProfile currentUser={currentUser} />} />
+              <Route
+                path="/profile"
+                element={<Profile currentUser={currentUser} onAuthChange={handleAuthChange} />}
+              />
+              <Route path="/login" element={<Login onAuthChange={handleAuthChange} />} />
+              <Route path="/register" element={<Register />} />
+            </Routes>
+          </MapProvider>
         </main>
         <Footer />
       </div>

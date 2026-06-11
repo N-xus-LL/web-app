@@ -56,7 +56,7 @@ class LoansService {
             it[itemId] = request.itemId
             it[lenderId] = request.lenderId
             it[borrowerId] = request.borrowerId
-            it[status] = LoanStatusEnum.PENDING.id
+            it[status] = LoanStatusEnum.BORROWING_REQUESTED.id
             it[startDate] = request.startDate?.toLocalDateTime(TimeZone.UTC)
             it[expectedReturnDate] = request.expectedReturnDate?.toLocalDateTime(TimeZone.UTC)
             it[notes] = request.notes

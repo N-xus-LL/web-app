@@ -5,13 +5,39 @@ import loanService from "../services/loanService";
 import { getItemOwnerId } from "../utils/userDisplay";
 import {
   getLoanRecord,
-  getLoanStatus,
-  LOAN_STATUS
+  getLoanStatus
 } from "../utils/loanWorkflow";
-import {PieChart, DonutChart, BarChart, ChartLegend} from "../components/Charts"
+import { LoanStatus, itemConditionOptions, loanStatusOptions } from "../constants/referenceData";
+import { PieChart, DonutChart, BarChart, ChartLegend } from "../components/Charts"
 
 const countByStatus = (loans, statuses) =>
   loans.filter((entry) => statuses.includes(getLoanStatus(getLoanRecord(entry)))).length;
+
+const statusColors = {
+  borrowing_requested: "#9A5EE0",
+  awaiting_pickup: "#44A7F2",
+  active: "#2563eb",
+  returned: "#ECF244",
+  completed: "#53F244",
+  cancelled: "#F52A2A"
+};
+
+const conditionColors = {
+  excellent: "#53F244",
+  very_good: "#22c55e",
+  good: "#44A7F2",
+  fair: "#9A5EE0",
+  poor: "#ECF244",
+  damaged: "#F52A2A",
+  broken: "#F52A2A"
+};
+
+const buildStatusChartData = (loans) =>
+  loanStatusOptions.map((status) => ({
+    label: status.label,
+    value: countByStatus(loans, [status.value]),
+    color: statusColors[status.value] || "#94a3b8"
+  }));
 
 const Statistics = ({ currentUser }) => {
   const currentUserId = currentUser?.user?.id;
@@ -51,108 +77,38 @@ const Statistics = ({ currentUser }) => {
         const myItems = (Array.isArray(items) ? items : []).filter(
           (item) => getItemOwnerId(item) === String(currentUserId)
         );
-        var itemCondList = [0, 0, 0, 0, 0];
-        for (var i = 0; i < myItems.length; i++) {
-            switch (myItems[i].condition_id) {
-              case "excellent":
-                itemCondList[0]++;
-                break;
-              case "good":
-                itemCondList[1]++;
-                break;
-              case "fair":
-                 itemCondList[2]++;
-                break;
-              case "poor":
-                itemCondList[3]++;
-                break;
-              case "damaged":
-                itemCondList[4]++;
-                break;
-            }
-        }
-        setItemConditions([
-          { label: "Excellent", value: itemCondList[0], color: "#53F244" },
-          { label: "Good", value: itemCondList[1], color: "#44A7F2" },
-          { label: "Fair", value: itemCondList[2], color: "#9A5EE0" },
-          { label: "Poor", value: itemCondList[3], color: "#ECF244" },
-          { label: "Damaged", value: itemCondList[4], color: "#F52A2A" }
-        ]);
+        setItemConditions(
+          itemConditionOptions.map((condition) => ({
+            label: condition.label,
+            value: myItems.filter((item) => {
+              const itemCondition = item.condition_id || item.conditionId;
+              return itemCondition === condition.value || (condition.value === "broken" && itemCondition === "damaged");
+            }).length,
+            color: conditionColors[condition.value] || "#94a3b8"
+          }))
+        );
 
         const lendingList = Array.isArray(lendings) ? lendings : [];
         const borrowingList = Array.isArray(borrowings) ? borrowings : [];
         const allLoans = [...lendingList, ...borrowingList];
 
-        var loanLendingStatuses = [0, 0, 0, 0, 0];
-        for (var i = 0; i < lendingList.length; i++) {
-            switch (lendingList[i].status) {
-              case "pending":
-                loanLendingStatuses[0]++;
-                break;
-              case "active":
-                loanLendingStatuses[1]++;
-                break;
-              case "returned":
-                 loanLendingStatuses[2]++;
-                break;
-              case "completed":
-                loanLendingStatuses[3]++;
-                break;
-              case "cancelled":
-                loanLendingStatuses[4]++;
-                break;
-            }
-        }
-        setLendingData([
-          { label: "Awaiting approval", value: loanLendingStatuses[0], color: "#9A5EE0" },
-          { label: "Borrowed", value: loanLendingStatuses[1], color: "#44A7F2" },
-          { label: "Return pending", value: loanLendingStatuses[2], color: "#ECF244" },
-          { label: "Completed", value: loanLendingStatuses[3], color: "#53F244" },
-          { label: "Cancelled", value: loanLendingStatuses[4], color: "#F52A2A" }
-        ]);
+        setLendingData(buildStatusChartData(lendingList));
+        setBorrowingData(buildStatusChartData(borrowingList));
 
-        var loanBorrowingStatuses = [0, 0, 0, 0, 0];
-        for (var i = 0; i < borrowingList.length; i++) {
-            switch (borrowingList[i].status) {
-                case "pending":
-                    loanBorrowingStatuses[0]++;
-                    break;
-                case "active":
-                    loanBorrowingStatuses[1]++;
-                    break;
-                case "returned":
-                    loanBorrowingStatuses[2]++;
-                    break;
-                case "completed":
-                    loanBorrowingStatuses[3]++;
-                    break;
-                case "cancelled":
-                    loanBorrowingStatuses[4]++;
-                    break;
-            }
-        }
-        setBorrowingData([
-          { label: "Awaiting approval", value: loanBorrowingStatuses[0], color: "#9A5EE0" },
-          { label: "Borrowed", value: loanBorrowingStatuses[1], color: "#44A7F2" },
-          { label: "Return pending", value: loanBorrowingStatuses[2], color: "#ECF244" },
-          { label: "Completed", value: loanBorrowingStatuses[3], color: "#53F244" },
-          { label: "Cancelled", value: loanBorrowingStatuses[4], color: "#F52A2A" }
-        ]);
-
-        const completed = countByStatus(allLoans, [LOAN_STATUS.COMPLETED]);
+        const completed = countByStatus(allLoans, [LoanStatus.Completed.value]);
         const active = countByStatus(allLoans, [
-          LOAN_STATUS.PENDING,
-          LOAN_STATUS.ACTIVE,
-          LOAN_STATUS.RETURNED
+          LoanStatus.BorrowingRequested.value,
+          LoanStatus.Active.value,
+          LoanStatus.Returned.value
         ]);
 
         const finished = countByStatus(allLoans, [
-          LOAN_STATUS.COMPLETED,
-          LOAN_STATUS.CANCELLED
+          LoanStatus.Completed.value,
+          LoanStatus.Cancelled.value
         ]);
         setLoanCompletionStatuses([
             { label: "Active", value: active, color: "#44A7F2" },
-            { label: "Completed", value: finished, color: "#53F244" }
+            { label: "Finished", value: finished, color: "#53F244" }
         ]);
         const successRate = finished > 0 ? Math.round((completed / finished) * 100) : null;
 

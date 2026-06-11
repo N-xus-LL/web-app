@@ -13,10 +13,10 @@ class DslRepository {
             SELECT
                 lockers.id AS locker_id,
                 lockers.box_number,
-                lockers.max_weight_kg,
-                lockers.max_length_cm,
-                lockers.max_width_cm,
-                lockers.max_height_cm,
+                lockers.max_weight,
+                lockers.max_length,
+                lockers.max_width,
+                lockers.max_height,
                 lockers.available,
                 locker_stations.id AS station_id,
                 locations.id AS location_id,
@@ -35,6 +35,7 @@ class DslRepository {
         jdbcConnection.prepareStatement(query).use { stmt ->
             stmt.executeQuery().use { rs ->
                 val result = mutableListOf<Locker>()
+
                 while (rs.next()) {
                     val location = Location(
                         id = rs.getObject("location_id").toString(),
@@ -52,13 +53,14 @@ class DslRepository {
                         id = rs.getObject("locker_id").toString(),
                         station = station,
                         boxNumber = rs.getInt("box_number"),
-                        maxWeightKg = rs.getDouble("max_weight_kg"),
-                        maxLengthCm = rs.getDouble("max_length_cm"),
-                        maxWidthCm = rs.getDouble("max_width_cm"),
-                        maxHeightCm = rs.getDouble("max_height_cm"),
+                        maxWeight = rs.getDouble("max_weight"),
+                        maxLength = rs.getDouble("max_length"),
+                        maxWidth = rs.getDouble("max_width"),
+                        maxHeight = rs.getDouble("max_height"),
                         available = rs.getBoolean("available")
                     )
                 }
+
                 result
             }
         }

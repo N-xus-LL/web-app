@@ -5,6 +5,11 @@ plugins {
     alias(libs.plugins.kotlinx.rpc)
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
 
 application {
     mainClass = "io.ktor.server.netty.EngineMain"

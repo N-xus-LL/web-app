@@ -90,7 +90,16 @@ const ItemManagement = ({ currentUser }) => {
 
     try {
       const position = await geocodingService.getCurrentPosition();
-      setGeoCoordinates(position.latitude, position.longitude, "Using your current location.");
+      let address = "";
+
+      try {
+        address = await geocodingService.reverseGeocode(position.latitude, position.longitude);
+      } catch {
+        address = "Current location";
+      }
+
+      setAddressQuery(address);
+      setGeoCoordinates(position.latitude, position.longitude, address || "Using your current location.");
     } catch (requestError) {
       setError(requestError.message || "Could not get your current location.");
     } finally {
