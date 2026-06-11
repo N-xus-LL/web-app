@@ -20,13 +20,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build and push backend image
         uses: docker/build-push-action@v7
         with:
           context: ./backend/ktor-backend
           file: ./backend/ktor-backend/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/lendloop-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lendloop-frontend:latest
 
   notify-server:
     needs: build-and-push
