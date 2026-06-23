@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgis/postgis:17-3.4
+    container_name: lendloop-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-lendloop}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-lendloop}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - lendloop-network
+
+  backend:
+    build:
+      context: ./backend/ktor-backend
+      dockerfile: Dockerfile
+    image: n3xusll/lendloop-backend:latest
+    container_name: lendloop-backend
+    restart: unless-stopped
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      POSTGRES_URL: "jdbc:postgresql://db:5432/${POSTGRES_DB:-lendloop}"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    networks:
+      - lendloop-network
+
+volumes:
+  db_data:
+    name: lendloop_db_data
+
+networks:
+  lendloop-network:
+    name: lendloop-network
+    driver: bridge

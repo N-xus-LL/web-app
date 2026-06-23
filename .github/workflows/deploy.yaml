@@ -1,0 +1,48 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend/ktor-backend
+          file: ./backend/ktor-backend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lendloop-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/lendloop-frontend:latest
+
+  notify-server:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send deployment webhook
+        uses: joelwmale/webhook-action@v2
+        with:
+          url: ${{ secrets.WEBHOOK_URL }}
+          headers: '{"X-Webhook-Secret": "${{ secrets.WEBHOOK_SECRET }}"}'

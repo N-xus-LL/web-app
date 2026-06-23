@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "d3": "^7.9.0",
+    "leaflet": "^1.9.4",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "latest",
+    "vite": "latest"
+  }
+}

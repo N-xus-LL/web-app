@@ -1,0 +1,207 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
+package nexus.features.loans
+import features.loans.data.LoanStatusEnum
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.core.eq
+import kotlin.uuid.Uuid
+import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.json.buildJsonObject
+import nexus.features.users.Users
+import nexus.features.items.Items
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import kotlin.uuid.ExperimentalUuidApi
+
+class LoansService {
+
+    fun createLoan(request: CreateLoanRequest): LoanResponse = transaction {
+        // Validate that item exists
+        val itemExists = Items
+            .selectAll()
+            .where { Items.id eq request.itemId }
+            .any()
+
+        if (!itemExists) {
+            throw IllegalArgumentException("Item with ID '${request.itemId}' not found.")
+        }
+
+        // Validate lender and borrower exist
+        val lenderExists = Users
+            .selectAll()
+            .where { Users.id eq request.lenderId }
+            .any()
+
+        if (!lenderExists) {
+            throw IllegalArgumentException("Lender not found.")
+        }
+
+        val borrowerExists = Users
+            .selectAll()
+            .where { Users.id eq request.borrowerId }
+            .any()
+
+        if (!borrowerExists) {
+            throw IllegalArgumentException("Borrower not found.")
+        }
+
+        val loanId = Loans.insert {
+            it[id] = Uuid.random()
+            it[itemId] = request.itemId
+            it[lenderId] = request.lenderId
+            it[borrowerId] = request.borrowerId
+            it[status] = LoanStatusEnum.BORROWING_REQUESTED.id
+            it[startDate] = request.startDate?.toLocalDateTime(TimeZone.UTC)
+            it[expectedReturnDate] = request.expectedReturnDate?.toLocalDateTime(TimeZone.UTC)
+            it[notes] = request.notes
+            it[metadata] = request.metadata ?: buildJsonObject { }
+            it[conditionOnBorrowId] = null
+            it[agreedDamagePolicyId] = null
+            it[actualReturnDate] = null
+            it[conditionOnReturnId] = null
+        } get Loans.id
+
+        getLoanById(loanId) ?: throw IllegalStateException("Failed to create loan.")
+    }
+
+    fun getLoanById(loanId: EntityID<Uuid>): LoanResponse? = transaction {
+        Loans
+            .selectAll()
+            .where { Loans.id eq loanId }
+            .mapNotNull { row ->
+                LoanResponse(
+                    id = row[Loans.id].value,
+                    itemId = row[Loans.itemId],
+                    lenderId = row[Loans.lenderId],
+                    borrowerId = row[Loans.borrowerId],
+                    status = row[Loans.status],
+                    agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
+                    conditionOnBorrowId = row[Loans.conditionOnBorrowId],
+                    conditionOnReturnId = row[Loans.conditionOnReturnId],
+                    notes = row[Loans.notes],
+                    metadata = row[Loans.metadata]
+                )
+            }
+            .singleOrNull()
+    }
+
+    fun getAllLoans(): List<LoanResponse> = transaction {
+        Loans
+            .selectAll()
+            .map { row ->
+                LoanResponse(
+                    id = row[Loans.id].value,
+                    itemId = row[Loans.itemId],
+                    lenderId = row[Loans.lenderId],
+                    borrowerId = row[Loans.borrowerId],
+                    status = row[Loans.status],
+                    agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
+                    conditionOnBorrowId = row[Loans.conditionOnBorrowId],
+                    conditionOnReturnId = row[Loans.conditionOnReturnId],
+                    notes = row[Loans.notes],
+                    metadata = row[Loans.metadata]
+                )
+            }
+    }
+
+    fun getLoansByBorrower(borrowerId: Uuid): List<LoanResponse> = transaction {
+        Loans
+            .selectAll()
+            .where { Loans.borrowerId eq borrowerId }
+            .map { row ->
+                LoanResponse(
+                    id = row[Loans.id].value,
+                    itemId = row[Loans.itemId],
+                    lenderId = row[Loans.lenderId],
+                    borrowerId = row[Loans.borrowerId],
+                    status = row[Loans.status],
+                    agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
+                    conditionOnBorrowId = row[Loans.conditionOnBorrowId],
+                    conditionOnReturnId = row[Loans.conditionOnReturnId],
+                    notes = row[Loans.notes],
+                    metadata = row[Loans.metadata]
+                )
+            }
+    }
+
+    fun getLoansByLender(lenderId: Uuid): List<LoanResponse> = transaction {
+        Loans
+            .selectAll()
+            .where { Loans.lenderId eq lenderId }
+            .map { row ->
+                LoanResponse(
+                    id = row[Loans.id].value,
+                    itemId = row[Loans.itemId],
+                    lenderId = row[Loans.lenderId],
+                    borrowerId = row[Loans.borrowerId],
+                    status = row[Loans.status],
+                    agreedDamagePolicyId = row[Loans.agreedDamagePolicyId],
+                    startDate = row[Loans.startDate]?.toInstant(TimeZone.UTC),
+                    expectedReturnDate = row[Loans.expectedReturnDate]?.toInstant(TimeZone.UTC),
+                    actualReturnDate = row[Loans.actualReturnDate]?.toInstant(TimeZone.UTC),
+                    conditionOnBorrowId = row[Loans.conditionOnBorrowId],
+                    conditionOnReturnId = row[Loans.conditionOnReturnId],
+                    notes = row[Loans.notes],
+                    metadata = row[Loans.metadata]
+                )
+            }
+    }
+
+    fun updateLoan(loanId: EntityID<Uuid>, request: UpdateLoanRequest): LoanResponse? = transaction {
+        val existingLoan = getLoanById(loanId)
+
+        existingLoan?.let {
+            Loans.update({ Loans.id eq loanId }) {
+                request.status?.let { status -> it[Loans.status] = status }
+                request.agreedDamagePolicyId?.let { policyId -> it[agreedDamagePolicyId] = policyId }
+                request.actualReturnDate?.let { returnDate ->
+                    it[actualReturnDate] = returnDate.toLocalDateTime(TimeZone.UTC)
+                }
+                request.conditionOnReturnId?.let { conditionId -> it[conditionOnReturnId] = conditionId }
+                request.notes?.let { note -> it[notes] = note }
+                request.metadata?.let { meta -> it[metadata] = meta }
+            }
+
+            getLoanById(loanId)
+        }
+    }
+
+    fun returnLoan(loanId: EntityID<Uuid>, condOnReturnId: String): LoanResponse? = transaction {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+
+        Loans.update(where = { Loans.id eq loanId }) {
+            it[actualReturnDate] = now
+            it[conditionOnReturnId] = condOnReturnId
+            it[status] = LoanStatusEnum.COMPLETED.id
+        }
+
+        getLoanById(loanId)
+    }
+
+    fun cancelLoan(loanId: Uuid): Boolean = transaction {
+        val updated = Loans.update({ Loans.id eq loanId }) {
+            it[status] = LoanStatusEnum.CANCELLED.id
+        }
+        updated > 0
+    }
+
+    fun deleteLoan(loanId: Uuid): Boolean = transaction {
+        val deleted = Loans.deleteWhere { Loans.id eq loanId }
+        deleted > 0
+    }
+}
