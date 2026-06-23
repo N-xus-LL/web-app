@@ -132,5 +132,4 @@ jdbc:postgresql://db:5432/lendloop
 
 Do not expose PostgreSQL port `5432` publicly on a production server unless it is protected by firewall rules.
 
-The backend should usually be the only service that connects directly to the database.
-
+The backend should usually be the only service that connects directly to the database!
