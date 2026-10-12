@@ -30,7 +30,7 @@ services:
     build:
       context: ./backend/ktor-backend
       dockerfile: Dockerfile
-    image: n3xusll/lendloop-backend:latest
+    image: lendloop-backend:local
     container_name: lendloop-backend
     restart: unless-stopped
 
@@ -53,6 +53,21 @@ services:
       retries: 3
       start_period: 40s
 
+    networks:
+      - lendloop-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: lendloop-frontend:local
+    container_name: lendloop-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
     networks:
       - lendloop-network
 

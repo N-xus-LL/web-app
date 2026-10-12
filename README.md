@@ -27,17 +27,29 @@ corepack
 
 ## Run Full App With Docker
 
-Use this for the production-like setup:
+From the project root, build local images and start frontend, backend, and database together:
 
 ```bash
-docker compose -f docker-compose.server.yml pull
-docker compose -f docker-compose.server.yml up -d
+docker compose up -d --build
 ```
+
 
 Open:
 
 ```text
 http://localhost
+```
+
+Backend is also available at `http://localhost:8080`. Images are tagged
+`lendloop-backend:local` and `lendloop-frontend:local`; this command does not
+push anything to Docker Hub. Docker downloads base images/dependencies on the
+first build. Later starts can use `docker compose up -d` without rebuilding.
+
+After changing code, rebuild the relevant service:
+
+```bash
+docker compose up -d --build frontend
+docker compose up -d --build backend
 ```
 
 Test:
@@ -77,7 +89,7 @@ http://localhost:5173
 Stop full app:
 
 ```bash
-docker compose -f docker-compose.server.yml down
+docker compose down
 ```
 
 Reset database:
@@ -105,4 +117,48 @@ docker compose -f docker-compose.server.yml up -d
 ```
 
 Do not use `--build` on low-RAM servers.
+
+## Publish Local Images And Update The Server
+
+Run these commands on your PC from the project root:
+
+```bash
+docker compose build backend frontend
+docker login
+docker tag lendloop-backend:local n3xusll/lendloop-backend:latest
+docker tag lendloop-frontend:local n3xusll/lendloop-frontend:latest
+docker push n3xusll/lendloop-backend:latest
+docker push n3xusll/lendloop-frontend:latest
+```
+
+- `build` creates both images from the current source on your PC.
+- `login` authenticates your Docker Hub account.
+- `tag` gives the local images the repository names used by the server.
+- `push` uploads the images to Docker Hub. You need permission to push to the `n3xusll` repositories.
+
+Commit and push source/config changes to Git separately. Docker image uploads do not update Git.
+
+On the server, run from the cloned project root:
+
+```bash
+git pull --ff-only
+docker compose -f docker-compose.server.yml pull
+docker compose -f docker-compose.server.yml up -d
+docker compose -f docker-compose.server.yml ps
+curl --fail http://localhost/health
+```
+
+- `git pull --ff-only` updates the repository, including Compose and database scripts.
+- Compose `pull` downloads the published images.
+- `up -d` starts or recreates the containers using those images in the background.
+- `ps` shows container status.
+- `curl` checks the backend through the frontend proxy; expect `{"status":"ok"}`.
+
+Open `http://SERVER_IP` to use the app. The repository's server file is named
+`docker-compose.server.yml`. If you named it `server.yaml` on your server,
+replace `-f docker-compose.server.yml` with `-f server.yaml` in these commands.
+
+The server does not need Node.js, Java, or Gradle installed on the host and does
+not compile the application. Database data stays in its Docker volume during
+updates; SQL initialization scripts only run when that volume is first created.
 
