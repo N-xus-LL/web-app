@@ -27,6 +27,7 @@ const ItemManagement = ({ currentUser }) => {
   const [geocoding, setGeocoding] = useState(false);
   const [usernameById, setUsernameById] = useState({});
   const [usingNearby, setUsingNearby] = useState(false);
+  const [usingClosest, setUsingClosest] = useState(false);
 
   const filteredItems = items.filter((item) =>
     (item.name || "").toLowerCase().includes(searchTerm.trim().toLowerCase())
@@ -89,7 +90,16 @@ const ItemManagement = ({ currentUser }) => {
 
     try {
       const position = await geocodingService.getCurrentPosition();
-      setGeoCoordinates(position.latitude, position.longitude, "Using your current location.");
+      let address = "";
+
+      try {
+        address = await geocodingService.reverseGeocode(position.latitude, position.longitude);
+      } catch {
+        address = "Current location";
+      }
+
+      setAddressQuery(address);
+      setGeoCoordinates(position.latitude, position.longitude, address || "Using your current location.");
     } catch (requestError) {
       setError(requestError.message || "Could not get your current location.");
     } finally {
@@ -125,6 +135,7 @@ const ItemManagement = ({ currentUser }) => {
     setLocationHint("");
     loadItems();
     setUsingNearby(false);
+    setUsingClosest(false);
   };
 
   const ensureSearchLocation = () => {
@@ -175,6 +186,7 @@ const ItemManagement = ({ currentUser }) => {
       setItems(Array.isArray(response) ? response : []);
       setMessage("Nearby items loaded.");
       setUsingNearby(true);
+      setUsingClosest(false);
     } catch (requestError) {
       setError(requestError.message || "Failed to load nearby items");
     } finally {
@@ -196,6 +208,7 @@ const ItemManagement = ({ currentUser }) => {
       setItems(item ? [item] : []);
       setMessage("Closest item loaded.");
       setUsingNearby(false);
+      setUsingClosest(true);
     } catch (requestError) {
       setError(requestError.message || "Failed to load closest item");
     } finally {
@@ -284,11 +297,11 @@ const ItemManagement = ({ currentUser }) => {
             Reset
           </button>
           {usingNearby ? (
-                  <Link className="secondary-button small-button button-to-right" to="/map" state={{ items:items, circle:geoQuery }}>
+                  <Link className="secondary-button small-button button-to-right" to="/map" state={{ searchTerm:searchTerm, circle:geoQuery, addressLocation:addressQuery }}>
                         Show on map
                   </Link>
                 ) : (
-                  <Link className="secondary-button small-button button-to-right" to="/map" state={{ items }}>
+                  <Link className="secondary-button small-button button-to-right" to="/map" state={{ searchTerm:searchTerm, point:geoQuery, addressLocation:addressQuery, useClosest:usingClosest }}>
                        Show on map
                   </Link>
                 )}

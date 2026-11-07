@@ -41,7 +41,12 @@ fun ResultSet.toItem(): ItemEntity {
         metadata = getString("metadata"),
 
         createdAt = getTimestamp("created_at").toInstant(),
-        updatedAt = getTimestamp("updated_at").toInstant()
+        updatedAt = getTimestamp("updated_at").toInstant(),
+
+        weight = getDouble("weight"),
+        length = getDouble("length"),
+        height = getDouble("height"),
+        width = getDouble("width")
     )
 }
 
@@ -68,7 +73,12 @@ fun ItemEntity.toResponse(): ItemResponse {
         metadata = Json.parseToJsonElement(metadata).jsonObject,
 
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+
+        weight = weight,
+        length = length,
+        height = height,
+        width = width
     )
 }
 
@@ -101,6 +111,11 @@ fun ItemRequest.toEntity(): ItemEntity {
 
         createdAt = Instant.now(),
 
-        updatedAt = Instant.now()
+        updatedAt = Instant.now(),
+
+        weight = weight,
+        length = length,
+        height = height,
+        width = width
     )
 }

@@ -99,7 +99,7 @@ const Home = ({ currentUser }) => {
       <div className="feature-board">
         <article className="feature-card latest-items-card">
           <div className="panel-heading">
-            <h2>Newest items</h2>
+            <h2>Newest Items</h2>
             <Link className="link-button" to="/items">
               View all
             </Link>

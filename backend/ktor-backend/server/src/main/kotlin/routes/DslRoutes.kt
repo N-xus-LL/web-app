@@ -19,7 +19,33 @@ import nexus.repository.DslRepository
 fun Route.dslRoutes() {
     val dslRepository = DslRepository()
 
-    route("/dsl") {
+    route("/api/dsl") {
+        post("/") {
+            val script = call.receiveText().trim()
+            if (script.isBlank()) {
+                call.respond(HttpStatusCode.BadRequest, "DSL script body is required")
+                return@post
+            }
+
+            val mode = "app"
+
+            try {
+                val parsedAst = Parser(Lexer(script).tokenize()).parse()
+                val ast = parsedAst.copy(outputMode = OutputModeDirective(mode))
+                val validatedAst = SemanticAnalyzer(ast).analyze()
+                val lockers = dslRepository.getLockers()
+                val geoJson = Interpreter(validatedAst, lockers).exportGeoJson()
+
+                call.respond(HttpStatusCode.OK, geoJson)
+            } catch (error: SyntaxError) {
+                call.respond(HttpStatusCode.BadRequest, error.message)
+            } catch (error: SemanticError) {
+                call.respond(HttpStatusCode.BadRequest, error.message)
+            } catch (error: RuntimeError) {
+                call.respond(HttpStatusCode.BadRequest, error.message)
+            }
+        }
+
         post("/geojson") {
             val script = call.receiveText().trim()
             if (script.isBlank()) {

@@ -13,12 +13,17 @@ fun Application.configurePostgres() {
     //val dbConnection: Connection = connectToPostgres(embedded = true)
 
     Database.connect(
-        url = environment.config.property("postgres.url").getString(),
+        url = databaseConfig("postgres.url", "POSTGRES_URL", "jdbc:postgresql://localhost:5432/lendloop"),
         driver = "org.postgresql.Driver",
-        user = environment.config.property("postgres.user").getString(),
-        password = environment.config.property("postgres.password").getString()
+        user = databaseConfig("postgres.user", "POSTGRES_USER", "postgres"),
+        password = databaseConfig("postgres.password", "POSTGRES_PASSWORD", "postgres")
     )
 }
+
+private fun Application.databaseConfig(configKey: String, envKey: String, default: String): String =
+    System.getenv(envKey)?.takeIf { it.isNotBlank() }
+        ?: environment.config.propertyOrNull(configKey)?.getString()?.takeIf { it.isNotBlank() }
+        ?: default
 
 /**
  * Makes a connection to a Postgres database.
@@ -47,10 +52,10 @@ fun Application.connectToPostgres(embedded: Boolean): Connection {
         log.info("Using embedded H2 database for testing; replace this flag to use postgres")
         return DriverManager.getConnection("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", "root", "")
     } else {
-        val url = environment.config.property("postgres.url").getString()
+        val url = databaseConfig("postgres.url", "POSTGRES_URL", "jdbc:postgresql://localhost:5432/lendloop")
         log.info("Connecting to postgres database at $url")
-        val user = environment.config.property("postgres.user").getString()
-        val password = environment.config.property("postgres.password").getString()
+        val user = databaseConfig("postgres.user", "POSTGRES_USER", "postgres")
+        val password = databaseConfig("postgres.password", "POSTGRES_PASSWORD", "postgres")
 
         return DriverManager.getConnection(url, user, password)
     }

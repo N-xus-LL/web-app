@@ -14,11 +14,12 @@ class LocationRepository {
         val query = """
             SELECT
                 id,
-                name,
-                location_type,
+                locality_id,
                 ST_X(location) AS lon,
                 ST_Y(location) AS lat,
-                source,
+                location_type,
+                address,
+                source_id,
                 metadata
             FROM locations
         """.trimIndent()
@@ -38,11 +39,12 @@ class LocationRepository {
         val query = """
             SELECT
                 id,
-                name,
-                location_type,
+                locality_id,
                 ST_X(location) AS lon,
                 ST_Y(location) AS lat,
-                source,
+                location_type,
+                address,
+                source_id,
                 metadata
             FROM locations
             WHERE id = ?
@@ -61,17 +63,19 @@ class LocationRepository {
     fun createLocation(location: LocationEntity): LocationEntity = transaction {
         val query = """
             INSERT INTO locations (
-                name,
-                location_type,
+                locality_id,
                 location,
-                source,
+                location_type,
+                address,
+                source_id,
                 metadata
             ) VALUES (
-                ?, -- name
-                ?, -- location_type
+                ?, -- locality_id
                 ST_SetSRID(ST_MakePoint(?, ?), 4326), -- lon, lat
-                ?, -- source
-                ?::jsonb
+                ?,  --  location_type
+                ?,  --  address
+                ?, -- source_id
+                ?::jsonb -- metadata
             )
             RETURNING *, ST_X(location) AS lon, ST_Y(location) AS lat;
         """.trimIndent()
@@ -79,12 +83,13 @@ class LocationRepository {
         val jdbcConnection = TransactionManager.current().connection.connection as Connection
 
         jdbcConnection.prepareStatement(query).use { stmt ->
-            stmt.setString(1, location.name)
-            stmt.setString(2, location.locationType)
-            stmt.setDouble(3, location.location.longitude)
-            stmt.setDouble(4, location.location.latitude)
-            stmt.setString(5, location.source)
-            stmt.setString(6, location.metadata)
+            stmt.setObject(1, location.locality_id)
+            stmt.setDouble(2, location.location.longitude)
+            stmt.setDouble(3, location.location.latitude)
+            stmt.setString(4, location.locationType)
+            stmt.setString(5, location.address)
+            stmt.setObject(6, location.source_id)
+            stmt.setString(7, location.metadata)
 
             stmt.executeQuery().use { rs ->
                 if (rs.next()) rs.toLocation() else error("Failed to create location")
@@ -96,10 +101,11 @@ class LocationRepository {
         val query = """
             UPDATE locations
             SET
-                name = ?,
-                location_type = ?,
+                locality_id = ?,
                 location = ST_SetSRID(ST_MakePoint(?, ?), 4326),
-                source = ?,
+                location_type = ?,
+                address = ?,
+                source_id = ?,
                 metadata = ?::jsonb
             WHERE id = ?
             RETURNING id;
@@ -108,13 +114,14 @@ class LocationRepository {
         val jdbcConnection = TransactionManager.current().connection.connection as Connection
 
         jdbcConnection.prepareStatement(query).use { stmt ->
-            stmt.setString(1, location.name)
-            stmt.setString(2, location.locationType)
-            stmt.setDouble(3, location.location.longitude)
-            stmt.setDouble(4, location.location.latitude)
-            stmt.setString(5, location.source)
-            stmt.setString(6, location.metadata)
-            stmt.setObject(7, location.id)
+            stmt.setObject(1, location.locality_id)
+            stmt.setDouble(2, location.location.longitude)
+            stmt.setDouble(3, location.location.latitude)
+            stmt.setString(4, location.locationType)
+            stmt.setString(5, location.address)
+            stmt.setObject(6, location.source_id)
+            stmt.setString(7, location.metadata)
+            stmt.setObject(8, location.id)
 
             stmt.executeQuery().use { rs -> rs.next() }
         }
@@ -133,11 +140,12 @@ class LocationRepository {
         val query = """
             SELECT
                 id,
-                name,
-                location_type,
+                locality_id,
                 ST_X(location) AS lon,
                 ST_Y(location) AS lat,
-                source,
+                location_type,
+                address,
+                source_id,
                 metadata
             FROM locations
             ORDER BY location <-> ST_SetSRID(ST_MakePoint(?, ?), 4326)
@@ -159,11 +167,12 @@ class LocationRepository {
         val query = """
             SELECT
                 id,
-                name,
-                location_type,
+                locality_id,
                 ST_X(location) AS lon,
                 ST_Y(location) AS lat,
-                source,
+                location_type,
+                address,
+                source_id,
                 metadata
             FROM locations
             WHERE ST_DWithin(

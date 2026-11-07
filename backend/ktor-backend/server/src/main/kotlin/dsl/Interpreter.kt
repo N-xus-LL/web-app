@@ -30,10 +30,10 @@ data class Locker(
     val id: String,
     val station: LockerStation,
     val boxNumber: Int,
-    val maxWeightKg: Double,
-    val maxLengthCm: Double,
-    val maxWidthCm: Double,
-    val maxHeightCm: Double,
+    val maxWeight: Double,
+    val maxLength: Double,
+    val maxWidth: Double,
+    val maxHeight: Double,
     val available: Boolean,
 
     // Mutable fields evaluated dynamically by the interpreter pipeline
@@ -69,9 +69,7 @@ class Interpreter(
         selectedLocker = null
 
         // Resolve locker distances from the class-level reference point.
-        findSpatialMatches()
-        findCandidates()
-        findClosest()
+        findMatch()
 
         // Process script execution blocks sequentially
         // The mutable map keeps track of locally bound scope variables (e.g., current loop iteration)
@@ -94,10 +92,11 @@ class Interpreter(
         }
 
         val mode = ast.outputMode?.mode?.lowercase() ?: "app"
+        val referenceRadius = search.finalRadius
 
         return when (mode) {
-            "debug" -> GeoJsonExporter.exportDebug(lender, borrower, referencePoint, lockers)
-            else -> GeoJsonExporter.exportApp(lender, borrower, referencePoint, lockers)
+            "debug" -> GeoJsonExporter.exportDebug(lender, borrower, lockers, referencePoint, referenceRadius)
+            else -> GeoJsonExporter.exportApp(lender, borrower, selectedLocker!!)
         }
     }
 
@@ -246,7 +245,7 @@ class Interpreter(
     }
 
     // Finding lockers which are spatial matches
-    private fun findSpatialMatches() {
+    private fun findMatch() {
         if (lockers.isEmpty()) {
             throw RuntimeError("No lockers were provided to the interpreter.")
         }
@@ -262,16 +261,22 @@ class Interpreter(
             locker.isSelected = false
         }
 
-        var currentRadius = search.initialRadius
+        var currentRadius = search.finalRadius
         val farthestLockerDistance = lockers.maxOf { it.distance }
 
-        while (lockersInRadius.isEmpty()) {
+        while (lockersMatching.isEmpty()) {
             lockersInRadius = lockers
                 .filter { it.distance <= currentRadius }
                 .toMutableList()
 
             if (lockersInRadius.isNotEmpty()) {
-                break
+                findCandidates()
+                if (lockersMatching.isNotEmpty()) {
+                    // println("Matching lockers were found:")
+                    // println(lockersMatching.joinToString(separator = "\n"){ "• $it" })
+
+                    findClosestMatch()
+                }
             }
 
             if (currentRadius > farthestLockerDistance + search.radiusDelta) {
@@ -303,9 +308,17 @@ class Interpreter(
     }
 
     // Finding closest candidate locker
-    private fun findClosest() {
-        selectedLocker = lockersMatching.minByOrNull { it.distance }
+    private fun findClosestMatch() {
+        selectedLocker = lockersMatching.minByOrNull { locker ->
+            val volume = locker.maxLength * locker.maxWidth * locker.maxHeight
+            val normalizedDistance = locker.distance / lockersMatching.maxOf { it.distance }
+            val normalizedVolume = volume / lockersMatching.maxOf { volume }
+
+            (normalizedDistance * 0.5) + (normalizedVolume * 0.5)
+        }
+
         markSelectedLocker()
+        // println("Matching locker was found: $selectedLocker")
     }
 
     private fun markSelectedLocker() {
@@ -316,10 +329,10 @@ class Interpreter(
     }
 
     private fun lockerFitsItem(locker: Locker): Boolean {
-        return locker.maxWeightKg >= item.weight &&
-                locker.maxLengthCm >= item.length &&
-                locker.maxWidthCm >= item.width &&
-                locker.maxHeightCm >= item.height
+        return locker.maxWeight >= item.weight &&
+                locker.maxLength >= item.length &&
+                locker.maxWidth >= item.width &&
+                locker.maxHeight >= item.height
     }
 
     // Haversine geospatial calculation

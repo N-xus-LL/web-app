@@ -30,7 +30,11 @@ class ItemRepository() {
                 available,
                 metadata,
                 created_at,
-                updated_at
+                updated_at,
+                weight,
+                length,
+                height,
+                width
             FROM items;
         """.trimIndent()
         val jdbcConnection = TransactionManager.current().connection.connection as Connection
@@ -64,7 +68,12 @@ class ItemRepository() {
             available,
             metadata,
             created_at,
-            updated_at
+            updated_at,
+            
+            weight,
+            length,
+            height,
+            width
 
         FROM items
         WHERE id = ?;
@@ -104,7 +113,12 @@ class ItemRepository() {
         
             estimated_value,
             available,
-            metadata
+            metadata,
+            
+            weight,
+            length,
+            height,
+            width
         )
         VALUES (
             ?, -- owner_id
@@ -120,7 +134,11 @@ class ItemRepository() {
         
             ?, -- estimated_value
             ?, -- available
-            ?::jsonb -- metadata
+            ?::jsonb, -- metadata
+            ?, -- weight
+            ?, -- length
+            ?, -- height
+            ? -- width
         )
         RETURNING *,
     ST_X(current_location) AS lon,
@@ -160,6 +178,11 @@ class ItemRepository() {
                 item.metadata
             )
 
+            stmt.setDouble(13, item.weight)
+            stmt.setDouble(14, item.length)
+            stmt.setDouble(15, item.height)
+            stmt.setDouble(16, item.width)
+
             stmt.executeQuery().use { rs ->
 
                 if (rs.next()) {
@@ -189,6 +212,11 @@ class ItemRepository() {
                 estimated_value = ?,
                 available = ?,
                 metadata = ?::jsonb,
+
+                weight = ?,
+                length = ?,
+                height = ?,
+                width = ?,
 
                 updated_at = CURRENT_TIMESTAMP
 
@@ -229,7 +257,12 @@ class ItemRepository() {
                 item.metadata
             )
 
-            stmt.setObject(13, item.id)
+            stmt.setDouble(13, item.weight)
+            stmt.setDouble(14, item.length)
+            stmt.setDouble(15, item.height)
+            stmt.setDouble(16, item.width)
+
+            stmt.setObject(17, item.id)
 
             stmt.executeQuery().use { rs ->
 
@@ -259,7 +292,11 @@ class ItemRepository() {
                 available,
                 metadata,
                 created_at,
-                updated_at
+                updated_at,
+                weight,
+                length,
+                height,
+                width
             FROM items
             ORDER BY current_location <-> ST_SetSRID(ST_MakePoint(?, ?), 4326)
             LIMIT 1;
@@ -300,7 +337,11 @@ class ItemRepository() {
                 available,
                 metadata,
                 created_at,
-                updated_at
+                updated_at,
+                weight,
+                length,
+                height,
+                width
             FROM items
             WHERE ST_DWithin(
                 current_location::geography,
@@ -346,7 +387,11 @@ class ItemRepository() {
                 available,
                 metadata,
                 created_at,
-                updated_at
+                updated_at,
+                weight,
+                length,
+                height,
+                width
             FROM items
             WHERE owner_id = ?;
         """.trimIndent()

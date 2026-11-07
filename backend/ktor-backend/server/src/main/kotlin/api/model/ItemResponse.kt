@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 import nexus.api.serializers.InstantSerializer
 import nexus.models.GeoPoint
+import java.math.BigDecimal
 import java.time.Instant
 
 @Serializable
@@ -17,8 +18,12 @@ data class ItemResponse(
     val description: String?,
     val images: List<String>,
     val currentLocation: GeoPoint,
-    val estimatedValue: Double?,
     val available: Boolean,
+    val weight: Double,
+    val length: Double,
+    val width: Double,
+    val height: Double,
+    val estimatedValue: Double?,
     val metadata: JsonObject,
     @Serializable(with = InstantSerializer::class)
     val createdAt: Instant,

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import authService from "../services/authService";
+import logoUrl from "../images/ll_no_bg.png";
 
 const ThemeToggleIcon = ({ theme }) => {
   if (theme === "dark") {
@@ -52,7 +53,7 @@ const Header = ({ currentUser, onAuthChange, theme, onThemeToggle }) => {
       <nav className="nav">
         <Link className="brand" to="/">
           <span className="brand-mark">
-            <img alt="LendLoop logo" src="/src/images/ll_no_bg.png" />
+            <img alt="LendLoop logo" src={logoUrl} />
           </span>
           <span>LendLoop</span>
         </Link>

@@ -5,9 +5,10 @@ import java.util.UUID
 
 data class LocationEntity(
     val id: UUID? = null,
-    val name: String,
-    val locationType: String?,
+    val locality_id: UUID,
     val location: GeoPoint,
-    val source: String?,
+    val locationType: String,
+    val address: String,
+    val source_id: String,
     val metadata: String
 )

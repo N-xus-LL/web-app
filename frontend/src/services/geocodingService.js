@@ -66,6 +66,29 @@ const getCurrentPosition = () =>
     );
   });
 
+const reverseGeocode = async (latitude, longitude) => {
+  const params = new URLSearchParams({
+    format: "json",
+    lat: String(latitude),
+    lon: String(longitude),
+    zoom: "18",
+    addressdetails: "1"
+  });
+
+  const response = await fetch(`${NOMINATIM_BASE}/reverse?${params}`, {
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not read the address for this location.");
+  }
+
+  const result = await response.json();
+  return result?.display_name || "";
+};
+
 const watchPosition = (onSuccess, onError) => {
   if (!navigator.geolocation) {
     onError(new Error("Geolocation is not supported in this browser."));
@@ -98,6 +121,7 @@ const watchPosition = (onSuccess, onError) => {
 const geocodingService = {
   geocodeAddress,
   getCurrentPosition,
+  reverseGeocode,
   watchPosition
 };
 
