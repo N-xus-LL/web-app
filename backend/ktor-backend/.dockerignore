@@ -1,6 +1,4 @@
 .gradle
-build
-server/build
-core/build
+**/build
 .idea
 *.iml

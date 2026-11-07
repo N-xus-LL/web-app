@@ -1,22 +1,56 @@
 [versions]
-h2 = "2.4.240"
-kotlin = "2.3.20"
-kotlinx-rpc = "0.10.2"
-logback = "1.5.21"
-exposed = "1.2.0"
-protolite-well-known-types = "18.0.1"
+dotenv-kotlin = "6.5.1"
+exposed = "1.6.1"
+guava = "33.8.0-jre"
+h2 = "2.5.252"
+hikaricp = "7.1.0"
+jackson = "3.2.4"
+jackson2 = "2.22.4"
+jbcrypt = "0.4"
+kotlin = "2.4.21"
+kotlinx-datetime = "0.8.0"
+kotlinx-rpc = "0.10.4"
+ktor = "3.6.1"
+logback = "1.6.6"
+netty-bom = "4.2.20.Final"
+postgis = "2025.1.1"
+postgresql = "42.7.14"
+protolite-well-known-types = "19.0.0"
+slf4j = "2.0.20"
 
 [libraries]
+dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenv-kotlin" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
+guava-bom = { group = "com.google.guava", name = "guava-bom", version.ref = "guava" }
 h2database-h2 = { module = "com.h2database:h2", version.ref = "h2" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
+jackson-core = { module = "tools.jackson.core:jackson-core", version.ref = "jackson"}
+jackson-databind = { module = "tools.jackson.core:jackson-databind", version.ref = "jackson"}
+jackson2-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson2"}
+jackson2-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson2"}
+jbcrypt   = { module = "org.mindrot:jbcrypt", version.ref = "jbcrypt" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-rpc-client = { module = "org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-client", version.ref = "kotlinx-rpc" }
 kotlinx-rpc-core = { module = "org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-core", version.ref = "kotlinx-rpc" }
 kotlinx-rpc-krpcSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-rpc-krpc-serialization-json", version.ref = "kotlinx-rpc" }
 kotlinx-rpc-server = { module = "org.jetbrains.kotlinx:kotlinx-rpc-krpc-ktor-server", version.ref = "kotlinx-rpc" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt-jvm", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-postgresql = { module = "org.postgresql:postgresql", version = "42.7.10" }
-exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
-exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+netty-bom = { group = "io.netty", name = "netty-bom", version.ref = "netty-bom" }
+postgis-jdbc = { module = "net.postgis:postgis-jdbc", version.ref = "postgis" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 protolite-well-known-types = { group = "com.google.firebase", name = "protolite-well-known-types", version.ref = "protolite-well-known-types" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -1,6 +1,7 @@
 services:
   db:
-    image: postgis/postgis:17-3.4
+    image: postgis/postgis:18-3.6
+    platform: linux/amd64
     container_name: lendloop-db
     restart: unless-stopped
 
@@ -13,7 +14,7 @@ services:
       - "5432:5432"
 
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
       - ./database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
 
@@ -22,6 +23,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
     networks:
       - lendloop-network
@@ -51,7 +53,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 120s
 
     networks:
       - lendloop-network
