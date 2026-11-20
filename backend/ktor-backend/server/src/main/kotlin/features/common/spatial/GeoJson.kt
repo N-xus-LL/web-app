@@ -28,12 +28,15 @@ class PostGisPointColumnType : ColumnType<GeoJsonPoint>() {
     override fun sqlType(): String = "GEOMETRY(POINT, 4326)"
 
     override fun valueFromDB(value: Any): GeoJsonPoint? {
-        // Value usually comes back from Postgres as a WKT string: POINT(12.34 56.78)
-        if (value !is String) return null
-        val coords = value.removePrefix("POINT(").removeSuffix(")")
-            .split(" ")
-            .map { it.toDouble() }
-        return GeoJsonPoint.fromLngLat(coords[0], coords[1])
+        val raw = value.toString()
+        // Accept both "POINT(lng lat)" and "SRID=4326;POINT(lng lat)"
+        val wkt = raw.substringAfter("POINT(", raw)
+            .substringBefore(")")
+        val parts = wkt.trim().split(Regex("\\s+"))
+        if (parts.size < 2) return null
+        val lng = parts[0].toDoubleOrNull() ?: return null
+        val lat = parts[1].toDoubleOrNull() ?: return null
+        return GeoJsonPoint.fromLngLat(lng, lat)
     }
 
     override fun notNullValueToDB(value: GeoJsonPoint): Any {

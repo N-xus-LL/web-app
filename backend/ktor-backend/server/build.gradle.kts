@@ -42,7 +42,7 @@ dependencies {
     implementation(libs.ktor.server.netty)
     implementation(libs.postgis.jdbc)
     implementation(libs.postgresql)
-    implementation(libs.slf4j.api)
+    implementation(libs.slf4j.nop)
     implementation(platform(libs.guava.bom))
     implementation(platform(libs.netty.bom))
     implementation(project(":core"))

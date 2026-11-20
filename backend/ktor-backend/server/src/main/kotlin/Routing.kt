@@ -10,16 +10,18 @@ import nexus.routes.itemRoutes
 import nexus.routes.locationRoutes
 import nexus.routes.userRoutes
 import nexus.features.loans.loanRoutes
+import nexus.features.lockers.lockerStationRoutes
 
 fun Application.configureRouting() {
     val userRepository = UserRepository()
 
     routing {
+        userRoutes(userRepository)
         locationRoutes()
         itemRoutes()
-        dslRoutes()
-        userRoutes(userRepository)
         loanRoutes()
+        dslRoutes()
+        lockerStationRoutes()
 
         get("/") {
             call.respondText("Hello, World!")

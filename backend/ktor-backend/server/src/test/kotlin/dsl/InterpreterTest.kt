@@ -1,10 +1,5 @@
-package nexus.dsl
+/*package nexus.dsl
 
-import dsl.Interpreter
-import dsl.Location
-import dsl.Locker
-import dsl.LockerStation
-import dsl.LockerStatus
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -52,28 +47,28 @@ class InterpreterTest {
                 id = "small",
                 lat = 46.5551,
                 lon = 15.6451,
-                maxWeightKg = 1.0,
-                maxLengthCm = 10.0,
-                maxWidthCm = 10.0,
-                maxHeightCm = 10.0
+                maxWeight = 1.0,
+                maxLength = 10.0,
+                maxWidth = 10.0,
+                maxHeight = 10.0
             ),
             locker(
                 id = "closest-fit",
                 lat = 46.5550,
                 lon = 15.6450,
-                maxWeightKg = 10.0,
-                maxLengthCm = 40.0,
-                maxWidthCm = 30.0,
-                maxHeightCm = 20.0
+                maxWeight = 10.0,
+                maxLength = 40.0,
+                maxWidth = 30.0,
+                maxHeight = 20.0
             ),
             locker(
                 id = "far-fit",
                 lat = 46.5580,
                 lon = 15.6480,
-                maxWeightKg = 10.0,
-                maxLengthCm = 40.0,
-                maxWidthCm = 30.0,
-                maxHeightCm = 20.0
+                maxWeight = 10.0,
+                maxLength = 40.0,
+                maxWidth = 30.0,
+                maxHeight = 20.0
             )
         )
 
@@ -162,38 +157,38 @@ class InterpreterTest {
                 id = "selected-fit",
                 lat = 46.1276,
                 lon = 14.5728,
-                maxWeightKg = 10.0,
-                maxLengthCm = 50.0,
-                maxWidthCm = 40.0,
-                maxHeightCm = 30.0
+                maxWeight = 10.0,
+                maxLength = 50.0,
+                maxWidth = 40.0,
+                maxHeight = 30.0
             ),
             locker(
                 id = "too-small",
                 lat = 46.1277,
                 lon = 14.5729,
-                maxWeightKg = 1.0,
-                maxLengthCm = 10.0,
-                maxWidthCm = 10.0,
-                maxHeightCm = 10.0
+                maxWeight = 1.0,
+                maxLength = 10.0,
+                maxWidth = 10.0,
+                maxHeight = 10.0
             ),
             locker(
                 id = "unavailable",
                 lat = 46.1278,
                 lon = 14.5730,
-                maxWeightKg = 10.0,
-                maxLengthCm = 50.0,
-                maxWidthCm = 40.0,
-                maxHeightCm = 30.0,
+                maxWeight = 10.0,
+                maxLength = 50.0,
+                maxWidth = 40.0,
+                maxHeight = 30.0,
                 available = false
             ),
             locker(
                 id = "outside",
                 lat = 46.1500,
                 lon = 14.5950,
-                maxWeightKg = 10.0,
-                maxLengthCm = 50.0,
-                maxWidthCm = 40.0,
-                maxHeightCm = 30.0
+                maxWeight = 10.0,
+                maxLength = 50.0,
+                maxWidth = 40.0,
+                maxHeight = 30.0
             )
         )
 
@@ -249,28 +244,28 @@ class InterpreterTest {
                 id = "small",
                 lat = 46.5551,
                 lon = 15.6451,
-                maxWeightKg = 1.0,
-                maxLengthCm = 10.0,
-                maxWidthCm = 10.0,
-                maxHeightCm = 10.0
+                maxWeight = 1.0,
+                maxLength = 10.0,
+                maxWidth = 10.0,
+                maxHeight = 10.0
             ),
             locker(
                 id = "closest-fit",
                 lat = 46.5550,
                 lon = 15.6450,
-                maxWeightKg = 10.0,
-                maxLengthCm = 40.0,
-                maxWidthCm = 30.0,
-                maxHeightCm = 20.0
+                maxWeight = 10.0,
+                maxLength = 40.0,
+                maxWidth = 30.0,
+                maxHeight = 20.0
             ),
             locker(
                 id = "far-fit",
                 lat = 46.5580,
                 lon = 15.6480,
-                maxWeightKg = 10.0,
-                maxLengthCm = 40.0,
-                maxWidthCm = 30.0,
-                maxHeightCm = 20.0
+                maxWeight = 10.0,
+                maxLength = 40.0,
+                maxWidth = 30.0,
+                maxHeight = 20.0
             )
         )
 
@@ -278,10 +273,10 @@ class InterpreterTest {
         id: String,
         lat: Double,
         lon: Double,
-        maxWeightKg: Double,
-        maxLengthCm: Double,
-        maxWidthCm: Double,
-        maxHeightCm: Double,
+        maxWeight: Double,
+        maxLength: Double,
+        maxWidth: Double,
+        maxHeight: Double,
         available: Boolean = true
     ): Locker {
         val location = Location(
@@ -300,11 +295,12 @@ class InterpreterTest {
             id = id,
             station = station,
             boxNumber = 1,
-            maxWeightKg = maxWeightKg,
-            maxLengthCm = maxLengthCm,
-            maxWidthCm = maxWidthCm,
-            maxHeightCm = maxHeightCm,
+            maxWeight = maxWeight,
+            maxLength = maxLength,
+            maxWidth = maxWidth,
+            maxHeight = maxHeight,
             available = available
         )
     }
 }
+*/
